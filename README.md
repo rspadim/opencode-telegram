@@ -19,6 +19,7 @@ Optional:
 - Copy `config.example.json` to `config.local.json`
 - `config.local.json` is ignored by git and meant for local secrets
 - Environment variables still override the local config when present
+- Set `locale` in `config.local.json` to one of: `en`, `pt-BR`, `es`, `fr`, `ru`, `zh`, `de`
 
 ## Scripts
 
@@ -70,7 +71,7 @@ Generated at runtime:
 - If no title is provided, it falls back to `New session - <timestamp>`
 - In the general chat, `/listtopics` shows the current topic/session mappings
 - In the general chat, `/status` shows bridge runtime status
-- In the general chat, `/sessions`, `/session`, `/project` and `/providers` expose OpenCode management info
+- In the general chat, `/sessions`, `/session`, `/project`, `/projects` and `/providers` expose OpenCode management info
 - In any linked topic, plain messages are forwarded into the mapped OpenCode session
 - In any linked topic, `/link <session-id>` rebinds the topic to an existing session
 - In any linked topic, `/todo`, `/diff`, `/abort`, `/fork`, `/share` and `/archive` act on the linked OpenCode session

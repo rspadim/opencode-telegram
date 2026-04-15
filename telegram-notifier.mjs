@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { createTranslator } from "./i18n.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,6 +23,8 @@ if (process.platform === "win32" && !String(process.env.PATH || "").toLowerCase(
 }
 
 const config = await loadLocalConfig();
+const LOCALE = config.locale || process.env.OPENCODE_LOCALE || "en";
+const t = createTranslator(LOCALE);
 const BOT_TOKEN = process.env.OPENCODE_TELEGRAM_BOT_TOKEN || config.telegram?.botToken;
 const CHAT_ID = process.env.OPENCODE_TELEGRAM_CHAT_ID || config.telegram?.chatId;
 const BASE_URL = process.env.OPENCODE_BASE_URL || config.opencode?.baseUrl || "http://127.0.0.1:4096";
@@ -195,11 +198,11 @@ function extractText(parts) {
 }
 
 function formatTelegramMessage(item) {
-  const folder = item.directory ? path.basename(item.directory) : "unknown-folder";
+  const folder = item.directory ? path.basename(item.directory) : t("unknownFolder");
   return [
-    "OpenCode finished a step.",
-    `Project: ${folder}`,
-    `Session: ${truncate(item.title, 80)}`,
+    t("finishedStep"),
+    t("project", { value: folder }),
+    t("session", { value: truncate(item.title, 80) }),
     "",
     item.text,
   ].join("\n");
@@ -592,6 +595,11 @@ async function handleGeneralTelegramMessage(baseUrl, message, command) {
 
   if (command.name === "project") {
     await sendTelegram(await formatProject(baseUrl));
+    return;
+  }
+
+  if (command.name === "projects") {
+    await sendTelegram(await formatProjects(baseUrl, command.args));
     return;
   }
 
@@ -1152,6 +1160,7 @@ async function formatHelp(inTopic = false) {
     `${mention} /sessions [limit] - list recent OpenCode sessions`,
     `${mention} /session <session-id> - inspect one OpenCode session`,
     `${mention} /project - show the current OpenCode project`,
+    `${mention} /projects [limit] - list known OpenCode projects`,
     `${mention} /providers - list configured providers and defaults`,
     `${mention} /help - show this help message`,
     "",
@@ -1181,9 +1190,12 @@ async function formatSessionDetails(baseUrl, sessionId) {
   }
 
   const session = await fetchJson(`${baseUrl}/session/${encodeURIComponent(target)}`);
+  const project = await fetchProjectById(baseUrl, session.projectID).catch(() => null);
   return [
     `Session: ${session.title || "Untitled session"}`,
     `ID: ${session.id}`,
+    session.projectID ? `Project ID: ${session.projectID}` : null,
+    project ? `Project: ${project.name || project.worktree}` : null,
     `Directory: ${session.directory || "unknown"}`,
     `Created: ${new Date(session.time.created).toISOString()}`,
     `Updated: ${new Date(session.time.updated).toISOString()}`,
@@ -1198,6 +1210,19 @@ async function formatProject(baseUrl) {
     `ID: ${project.id}`,
     `Worktree: ${project.worktree}`,
     `VCS: ${project.vcs || "none"}`,
+  ].join("\n");
+}
+
+async function formatProjects(baseUrl, args) {
+  const limit = clamp(Number(args || 10), 1, 20);
+  const projects = await fetchJson(`${baseUrl}/project`);
+  if (!Array.isArray(projects) || projects.length === 0) {
+    return "No projects found.";
+  }
+
+  return [
+    `Projects: ${projects.length}`,
+    ...projects.slice(0, limit).map((project) => `- ${project.name || "Unnamed project"} | ${project.id} | ${project.worktree}`),
   ].join("\n");
 }
 
@@ -1220,12 +1245,16 @@ async function formatProviders(baseUrl) {
 async function formatMappedTopicStatus(baseUrl, mapping) {
   const statusMap = await fetchJson(`${baseUrl}/session/status`).catch(() => ({}));
   const liveStatus = statusMap?.[mapping.sessionId]?.type || "unknown";
+  const session = await fetchJson(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`).catch(() => null);
+  const project = session?.projectID ? await fetchProjectById(baseUrl, session.projectID).catch(() => null) : null;
   return [
     `Session: ${mapping.title || "Untitled session"}`,
     `Session ID: ${mapping.sessionId}`,
+    session?.projectID ? `Project ID: ${session.projectID}` : null,
+    project ? `Project: ${project.name || project.worktree}` : null,
     `Thread ID: ${mapping.threadId}`,
     `OpenCode status: ${liveStatus}`,
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 async function formatTodo(baseUrl, sessionId) {
@@ -1262,6 +1291,14 @@ async function notifyLifecycle(stateLabel, extra = {}) {
 
   await sendTelegram(bits.join("\n"));
   await appendLog(`lifecycle-${stateLabel}`, extra);
+}
+
+async function fetchProjectById(baseUrl, projectId) {
+  if (!projectId) {
+    return null;
+  }
+
+  return fetchJson(`${baseUrl}/project/${encodeURIComponent(projectId)}`);
 }
 
 function topicNameForSession(sessionId, title) {
