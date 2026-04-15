@@ -20,6 +20,7 @@ Optional:
 - `config.local.json` is ignored by git and meant for local secrets
 - Environment variables still override the local config when present
 - Set `locale` in `config.local.json` to one of: `en`, `pt-BR`, `es`, `fr`, `ru`, `zh`, `de`
+- Set `runtime.replayPastMessages` to `true` if you want Telegram to repopulate recent completed OpenCode history on startup (default: `false`)
 
 ## Languages
 
@@ -68,6 +69,12 @@ Generated at runtime:
 - `data/telegram-notifier.state.json`
 - `data/telegram-topic-map.json`
 - `data/telegram-notifier.log`
+
+## Structure
+
+- `src/` contains the runtime application code
+- Root wrapper files keep the CLI scripts and local launchers stable
+- `data/` contains runtime state only
 
 ## Telegram Commands
 
