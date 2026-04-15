@@ -925,6 +925,70 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
       return;
     }
 
+    if (command.name === "rename") {
+      if (!mapping) {
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        return;
+      }
+
+      const nextTitle = command.args.trim();
+      if (!nextTitle) {
+        await sendTelegram("Usage: /rename <new title>", { threadId: message.message_thread_id });
+        return;
+      }
+
+      const updated = await requestJson<SessionRecord>(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`, {
+        method: "PATCH",
+        body: { title: nextTitle },
+      });
+
+      if (topicMap[mapping.sessionId]) {
+        topicMap[mapping.sessionId].title = updated.title || nextTitle;
+        topicMap[mapping.sessionId].topicName = topicNameForSession(mapping.sessionId, updated.title || nextTitle);
+        await saveTopicMap();
+      }
+
+      await sendTelegram(`Session renamed to: ${updated.title || nextTitle}`, { threadId: message.message_thread_id });
+      return;
+    }
+
+    if (command.name === "children") {
+      if (!mapping) {
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        return;
+      }
+
+      const children = await fetchJson<SessionRecord[]>(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/children`);
+      if (!Array.isArray(children) || children.length === 0) {
+        await sendTelegram("No child sessions found.", { threadId: message.message_thread_id });
+        return;
+      }
+
+      await sendTelegram(
+        [
+          `Child sessions: ${children.length}`,
+          ...children.slice(0, 10).map((child) => `- ${child.title || t("untitledSession")} | ${child.id}`),
+        ].join("\n"),
+        { threadId: message.message_thread_id },
+      );
+      return;
+    }
+
+    if (command.name === "delete") {
+      if (!mapping) {
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        return;
+      }
+
+      await requestJson<boolean>(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`, {
+        method: "DELETE",
+      });
+      delete topicMap[mapping.sessionId];
+      await saveTopicMap();
+      await sendTelegram(`Deleted session ${mapping.sessionId}.`, { threadId: message.message_thread_id });
+      return;
+    }
+
     if (command.name === "download") {
       if (!mapping) {
         await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
@@ -1320,6 +1384,9 @@ async function formatHelp(inTopic = false): Promise<string> {
       t("helpTopicFork"),
       t("helpTopicShare"),
       t("helpTopicArchive"),
+      "/rename <new title> - rename the current session",
+      "/children - list child sessions created from this one",
+      "/delete - delete the current session and unlink this topic",
       "/download - export the recent session transcript as a file",
       t("helpTopicLink"),
       t("helpTopicUnlink"),

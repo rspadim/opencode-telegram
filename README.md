@@ -89,7 +89,7 @@ Generated at runtime:
 - In the general chat, `/sessions`, `/session`, `/project`, `/projects` and `/providers` expose OpenCode management info
 - In any linked topic, plain messages are forwarded into the mapped OpenCode session
 - In any linked topic, `/link <session-id>` rebinds the topic to an existing session
-- In any linked topic, `/todo`, `/diff`, `/abort`, `/fork`, `/share`, `/archive` and `/download` act on the linked OpenCode session
+- In any linked topic, `/todo`, `/diff`, `/abort`, `/fork`, `/share`, `/archive`, `/rename`, `/children`, `/delete` and `/download` act on the linked OpenCode session
 - In any linked topic, `/unlink` removes the mapping
 - In any chat, `/help` shows the available commands
 
