@@ -1,0 +1,13 @@
+{
+  "name": "telegram-opencode",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node telegram-notifier.mjs",
+    "stop": "node manage-notifier.mjs stop",
+    "status": "node manage-notifier.mjs status",
+    "check": "node --check telegram-notifier.mjs && node --check manage-notifier.mjs",
+    "tray:windows": "powershell -ExecutionPolicy Bypass -File .\\tray-telegram-notifier.ps1"
+  }
+}

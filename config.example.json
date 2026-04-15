@@ -1,0 +1,15 @@
+{
+  "telegram": {
+    "botToken": "123456:replace-me",
+    "chatId": "-1000000000000"
+  },
+  "opencode": {
+    "baseUrl": "http://127.0.0.1:4096"
+  },
+  "runtime": {
+    "pollMs": 5000,
+    "sessionLimit": 25,
+    "messageLimit": 20,
+    "attachmentSizeLimit": 10000000
+  }
+}
