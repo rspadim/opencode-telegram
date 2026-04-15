@@ -547,25 +547,25 @@ async function handleGeneralTelegramMessage(baseUrl, message, command) {
 
     await sendTelegram(
       [
-        `Created session: ${session.title || title}`,
-        `Session ID: ${session.id}`,
-        threadId ? `Topic created: ${topicMap[session.id]?.topicName || "ok"}` : "Posted to general chat",
+        t("createdSession", { title: session.title || title }),
+        t("sessionId", { value: session.id }),
+        threadId ? t("topicCreated", { name: topicMap[session.id]?.topicName || "ok" }) : t("postedToGeneral"),
       ].join("\n"),
     );
 
     if (threadId) {
       await sendTelegram(
         [
-          "This topic is linked to an OpenCode session.",
-          `Session: ${session.title || title}`,
-          `Session ID: ${session.id}`,
-          "Send plain messages here to forward them into OpenCode.",
+          t("topicLinkedLine1"),
+          t("session", { value: session.title || title }),
+          t("sessionId", { value: session.id }),
+          t("topicLinkedLine2"),
         ].join("\n"),
         {
           sessionId: session.id,
           title: session.title || title,
           directory: session.directory || "",
-          text: "Session linked.",
+          text: t("sessionLinkedShort"),
         },
       );
     }
@@ -613,7 +613,7 @@ async function handleGeneralTelegramMessage(baseUrl, message, command) {
     return;
   }
 
-  await sendTelegram("Unknown command. Use /help.");
+  await sendTelegram(t("unknownCommand"));
 }
 
 async function handleTopicTelegramMessage(baseUrl, message, command) {
@@ -622,7 +622,7 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
   if (command) {
     if (command.name === "unlink") {
       if (!mapping) {
-        await sendTelegram("This topic is not linked to any OpenCode session.", { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
         return;
       }
 
@@ -632,14 +632,14 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
         sessionId: mapping.sessionId,
         threadId: message.message_thread_id,
       });
-      await sendTelegram("Topic unlinked from the OpenCode session.", { threadId: message.message_thread_id });
+      await sendTelegram(t("topicUnlinked"), { threadId: message.message_thread_id });
       return;
     }
 
     if (command.name === "link") {
       const sessionId = command.args.trim();
       if (!sessionId) {
-        await sendTelegram("Usage: /link <session-id>", { threadId: message.message_thread_id });
+        await sendTelegram(t("linkUsage"), { threadId: message.message_thread_id });
         return;
       }
 
@@ -647,7 +647,7 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
       topicMap[session.id] = {
         chatId: CHAT_ID,
         threadId: message.message_thread_id,
-        title: session.title || "Untitled session",
+        title: session.title || t("untitledSession"),
         topicName: topicNameForSession(session.id, session.title),
         createdAt: Date.now(),
       };
@@ -656,13 +656,13 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
         sessionId: session.id,
         threadId: message.message_thread_id,
       });
-      await sendTelegram(`Linked this topic to session ${session.id}.`, { threadId: message.message_thread_id });
+      await sendTelegram(t("linkedTopicToSession", { sessionId: session.id }), { threadId: message.message_thread_id });
       return;
     }
 
     if (command.name === "status") {
       if (!mapping) {
-        await sendTelegram("This topic is not linked to any OpenCode session.", { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
         return;
       }
 
@@ -672,7 +672,7 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
 
     if (command.name === "todo") {
       if (!mapping) {
-        await sendTelegram("This topic is not linked to any OpenCode session.", { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
         return;
       }
 
@@ -682,7 +682,7 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
 
     if (command.name === "diff") {
       if (!mapping) {
-        await sendTelegram("This topic is not linked to any OpenCode session.", { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
         return;
       }
 
@@ -692,18 +692,18 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
 
     if (command.name === "abort") {
       if (!mapping) {
-        await sendTelegram("This topic is not linked to any OpenCode session.", { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
         return;
       }
 
       await postJson(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/abort`, {});
-      await sendTelegram(`Abort requested for session ${mapping.sessionId}.`, { threadId: message.message_thread_id });
+      await sendTelegram(t("abortRequested", { sessionId: mapping.sessionId }), { threadId: message.message_thread_id });
       return;
     }
 
     if (command.name === "fork") {
       if (!mapping) {
-        await sendTelegram("This topic is not linked to any OpenCode session.", { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
         return;
       }
 
@@ -715,9 +715,9 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
       });
       await sendTelegram(
         [
-          `Forked session: ${forked.title || "Untitled session"}`,
-          `Session ID: ${forked.id}`,
-          threadId ? `Topic created: ${topicMap[forked.id]?.topicName || "ok"}` : "Posted to general chat",
+          t("forkedSession", { title: forked.title || t("untitledSession") }),
+          t("sessionId", { value: forked.id }),
+          threadId ? t("topicCreated", { name: topicMap[forked.id]?.topicName || "ok" }) : t("postedToGeneral"),
         ].join("\n"),
         { threadId: message.message_thread_id },
       );
@@ -726,12 +726,12 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
 
     if (command.name === "share") {
       if (!mapping) {
-        await sendTelegram("This topic is not linked to any OpenCode session.", { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
         return;
       }
 
       const shared = await postJson(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/share`, {});
-      await sendTelegram(shared?.share?.url ? `Share URL: ${shared.share.url}` : "Session shared.", {
+      await sendTelegram(shared?.share?.url ? t("shareUrl", { url: shared.share.url }) : t("sessionShared"), {
         threadId: message.message_thread_id,
       });
       return;
@@ -739,7 +739,7 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
 
     if (command.name === "archive") {
       if (!mapping) {
-        await sendTelegram("This topic is not linked to any OpenCode session.", { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
         return;
       }
 
@@ -751,7 +751,7 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
           },
         },
       });
-      await sendTelegram(`Archived session ${mapping.sessionId}.`, { threadId: message.message_thread_id });
+      await sendTelegram(t("archivedSession", { sessionId: mapping.sessionId }), { threadId: message.message_thread_id });
       return;
     }
 
@@ -760,12 +760,12 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
       return;
     }
 
-    await sendTelegram("Unknown command. Use /help.", { threadId: message.message_thread_id });
+    await sendTelegram(t("unknownCommand"), { threadId: message.message_thread_id });
     return;
   }
 
   if (!mapping) {
-    await sendTelegram("This topic is not linked yet. Use /link <session-id> or create one from general with /newtopic.", {
+    await sendTelegram(t("topicNotLinkedYet"), {
       threadId: message.message_thread_id,
     });
     return;
@@ -773,7 +773,7 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
 
   const parts = await buildOpencodePartsFromTelegramMessage(message);
   if (parts.length === 0) {
-    await sendTelegram("Nothing to forward from this message.", { threadId: message.message_thread_id });
+    await sendTelegram(t("nothingToForward"), { threadId: message.message_thread_id });
     return;
   }
 
@@ -784,7 +784,7 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
     text: truncate(extractTelegramText(message), 160),
     partCount: parts.length,
   });
-  await sendTelegram(`Forwarded to OpenCode session ${mapping.sessionId}.`, { threadId: message.message_thread_id });
+  await sendTelegram(t("forwardedToSession", { sessionId: mapping.sessionId }), { threadId: message.message_thread_id });
 }
 
 function extractTelegramText(message) {
@@ -1089,11 +1089,11 @@ function findMappingByThreadId(threadId) {
 function formatTopicList() {
   const entries = Object.entries(topicMap);
   if (entries.length === 0) {
-    return "No linked topics yet.";
+    return t("noLinkedTopics");
   }
 
   return [
-    `Linked topics: ${entries.length}`,
+    t("linkedTopics", { value: entries.length }),
     ...entries.slice(0, 20).map(([sessionId, value]) => `- ${value.topicName || value.title || sessionId} -> ${sessionId}`),
   ].join("\n");
 }
@@ -1108,14 +1108,14 @@ async function formatBridgeStatus(baseUrl) {
   }
 
   const statusLine = Object.keys(counts).length === 0
-    ? "OpenCode sessions: no live status"
-    : `OpenCode sessions: ${Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(", ")}`;
+    ? t("noLiveStatus")
+    : t("openCodeSessionsSummary", { value: Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(", ") });
 
   return [
-    "telegram-opencode status",
-    `PID: ${process.pid}`,
-    `Topic mappings: ${Object.keys(topicMap).length}`,
-    `Telegram offset: ${state.telegramOffset || 0}`,
+    t("statusTitle"),
+    t("pid", { value: process.pid }),
+    t("topicMappings", { value: Object.keys(topicMap).length }),
+    t("telegramOffset", { value: state.telegramOffset || 0 }),
     statusLine,
   ].join("\n");
 }
@@ -1126,47 +1126,47 @@ async function formatHelp(inTopic = false) {
 
   if (inTopic) {
     return [
-      "telegram-opencode topic help",
+      t("topicHelpTitle"),
       "",
-      "This topic can be linked to one OpenCode session.",
-      "Plain messages in a linked topic are forwarded to OpenCode.",
-      "Photos, documents, audio, voice notes and videos are also forwarded.",
+      t("topicHelpIntro1"),
+      t("topicHelpIntro2"),
+      t("topicHelpIntro3"),
       "",
-      "Commands:",
-      "/status - show the linked session for this topic",
-      "/todo - show the OpenCode todo list for this session",
-      "/diff - show the current diff summary for this session",
-      "/abort - request abort for the running session",
-      "/fork - fork the current OpenCode session into a new topic",
-      "/share - generate a share link for the current session",
-      "/archive - archive the current session",
-      "/link <session-id> - link this topic to an existing OpenCode session",
-      "/unlink - remove the current topic/session mapping",
-      "/help - show this help message",
+      t("commands"),
+      t("helpTopicStatus"),
+      t("helpTopicTodo"),
+      t("helpTopicDiff"),
+      t("helpTopicAbort"),
+      t("helpTopicFork"),
+      t("helpTopicShare"),
+      t("helpTopicArchive"),
+      t("helpTopicLink"),
+      t("helpTopicUnlink"),
+      t("helpTopicHelp"),
     ].join("\n");
   }
 
   return [
-    "telegram-opencode general help",
+    t("generalHelpTitle"),
     "",
-    "Use the general chat to create and inspect OpenCode sessions.",
-    "General-chat commands must explicitly mention the bot.",
-    "Use forum topics to talk to a specific linked session.",
+    t("generalHelpIntro1"),
+    t("generalHelpIntro2"),
+    t("generalHelpIntro3"),
     "",
-    "Commands:",
-    `${mention} /newtopic <title> - create a new OpenCode session and matching Telegram topic`,
-    `${mention} /listtopics - show saved topic/session mappings`,
-    `${mention} /status - show bridge and OpenCode runtime status`,
-    `${mention} /sessions [limit] - list recent OpenCode sessions`,
-    `${mention} /session <session-id> - inspect one OpenCode session`,
-    `${mention} /project - show the current OpenCode project`,
-    `${mention} /projects [limit] - list known OpenCode projects`,
-    `${mention} /providers - list configured providers and defaults`,
-    `${mention} /help - show this help message`,
+    t("commands"),
+    t("helpGeneralNewtopic", { mention }),
+    t("helpGeneralListtopics", { mention }),
+    t("helpGeneralStatus", { mention }),
+    t("helpGeneralSessions", { mention }),
+    t("helpGeneralSession", { mention }),
+    t("helpGeneralProject", { mention }),
+    t("helpGeneralProjects", { mention }),
+    t("helpGeneralProviders", { mention }),
+    t("helpGeneralHelp", { mention }),
     "",
-    "Examples:",
-    `${mention} /newtopic investigate payment bug`,
-    `${mention} /newtopic summarize audit notes`,
+    t("examples"),
+    t("helpExample1", { mention }),
+    t("helpExample2", { mention }),
   ].join("\n");
 }
 
@@ -1174,42 +1174,42 @@ async function formatSessions(baseUrl, args) {
   const limit = clamp(Number(args || 10), 1, 20);
   const sessions = await fetchJson(`${baseUrl}/session?limit=${limit}`);
   if (!Array.isArray(sessions) || sessions.length === 0) {
-    return "No sessions found.";
+    return t("noSessions");
   }
 
   return [
-    `Recent sessions: ${sessions.length}`,
-    ...sessions.map((session) => `- ${truncate(session.title || "Untitled session", 48)} | ${session.id} | ${path.basename(session.directory || "") || "unknown"}`),
+    t("recentSessions", { value: sessions.length }),
+    ...sessions.map((session) => `- ${truncate(session.title || t("untitledSession"), 48)} | ${session.id} | ${path.basename(session.directory || "") || "unknown"}`),
   ].join("\n");
 }
 
 async function formatSessionDetails(baseUrl, sessionId) {
   const target = String(sessionId || "").trim();
   if (!target) {
-    return "Usage: /session <session-id>";
+    return t("sessionUsage");
   }
 
   const session = await fetchJson(`${baseUrl}/session/${encodeURIComponent(target)}`);
   const project = await fetchProjectById(baseUrl, session.projectID).catch(() => null);
   return [
-    `Session: ${session.title || "Untitled session"}`,
-    `ID: ${session.id}`,
-    session.projectID ? `Project ID: ${session.projectID}` : null,
-    project ? `Project: ${project.name || project.worktree}` : null,
-    `Directory: ${session.directory || "unknown"}`,
-    `Created: ${new Date(session.time.created).toISOString()}`,
-    `Updated: ${new Date(session.time.updated).toISOString()}`,
-    session.parentID ? `Parent: ${session.parentID}` : null,
+    t("session", { value: session.title || t("untitledSession") }),
+    t("id", { value: session.id }),
+    session.projectID ? t("projectId", { value: session.projectID }) : null,
+    project ? t("project", { value: project.name || project.worktree }) : null,
+    t("directory", { value: session.directory || "unknown" }),
+    t("created", { value: new Date(session.time.created).toISOString() }),
+    t("updated", { value: new Date(session.time.updated).toISOString() }),
+    session.parentID ? t("parent", { value: session.parentID }) : null,
   ].filter(Boolean).join("\n");
 }
 
 async function formatProject(baseUrl) {
   const project = await fetchJson(`${baseUrl}/project/current`);
   return [
-    `Project: ${project.name || "Unnamed project"}`,
-    `ID: ${project.id}`,
-    `Worktree: ${project.worktree}`,
-    `VCS: ${project.vcs || "none"}`,
+    t("project", { value: project.name || t("unknownProject") }),
+    t("id", { value: project.id }),
+    t("worktree", { value: project.worktree }),
+    t("vcs", { value: project.vcs || "none" }),
   ].join("\n");
 }
 
@@ -1217,12 +1217,12 @@ async function formatProjects(baseUrl, args) {
   const limit = clamp(Number(args || 10), 1, 20);
   const projects = await fetchJson(`${baseUrl}/project`);
   if (!Array.isArray(projects) || projects.length === 0) {
-    return "No projects found.";
+    return t("noProjects");
   }
 
   return [
-    `Projects: ${projects.length}`,
-    ...projects.slice(0, limit).map((project) => `- ${project.name || "Unnamed project"} | ${project.id} | ${project.worktree}`),
+    t("projects", { value: projects.length }),
+    ...projects.slice(0, limit).map((project) => `- ${project.name || t("unknownProject")} | ${project.id} | ${project.worktree}`),
   ].join("\n");
 }
 
@@ -1230,11 +1230,11 @@ async function formatProviders(baseUrl) {
   const data = await fetchJson(`${baseUrl}/config/providers`);
   const providers = Array.isArray(data?.providers) ? data.providers : [];
   if (providers.length === 0) {
-    return "No providers configured.";
+    return t("noProviders");
   }
 
   return [
-    `Providers: ${providers.length}`,
+    t("providers", { value: providers.length }),
     ...providers.slice(0, 10).map((provider) => {
       const defaultModel = data?.default?.[provider.id];
       return `- ${provider.id} (${Object.keys(provider.models || {}).length} models)${defaultModel ? ` default=${defaultModel}` : ""}`;
@@ -1248,23 +1248,23 @@ async function formatMappedTopicStatus(baseUrl, mapping) {
   const session = await fetchJson(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`).catch(() => null);
   const project = session?.projectID ? await fetchProjectById(baseUrl, session.projectID).catch(() => null) : null;
   return [
-    `Session: ${mapping.title || "Untitled session"}`,
-    `Session ID: ${mapping.sessionId}`,
-    session?.projectID ? `Project ID: ${session.projectID}` : null,
-    project ? `Project: ${project.name || project.worktree}` : null,
-    `Thread ID: ${mapping.threadId}`,
-    `OpenCode status: ${liveStatus}`,
+    t("session", { value: mapping.title || t("untitledSession") }),
+    t("sessionId", { value: mapping.sessionId }),
+    session?.projectID ? t("projectId", { value: session.projectID }) : null,
+    project ? t("project", { value: project.name || project.worktree }) : null,
+    t("threadId", { value: mapping.threadId }),
+    t("openCodeStatus", { value: liveStatus }),
   ].filter(Boolean).join("\n");
 }
 
 async function formatTodo(baseUrl, sessionId) {
   const todos = await fetchJson(`${baseUrl}/session/${encodeURIComponent(sessionId)}/todo`).catch(() => []);
   if (!Array.isArray(todos) || todos.length === 0) {
-    return "No todo items for this session.";
+    return t("noTodos");
   }
 
   return [
-    `Todo items: ${todos.length}`,
+    t("todoItems", { value: todos.length }),
     ...todos.slice(0, 12).map((todo) => `- [${todo.status}] ${todo.content}`),
   ].join("\n");
 }
@@ -1272,21 +1272,21 @@ async function formatTodo(baseUrl, sessionId) {
 async function formatDiff(baseUrl, sessionId) {
   const diff = await fetchJson(`${baseUrl}/session/${encodeURIComponent(sessionId)}/diff`).catch(() => []);
   if (!Array.isArray(diff) || diff.length === 0) {
-    return "No diff entries for this session.";
+    return t("noDiff");
   }
 
   return [
-    `Diff files: ${diff.length}`,
+    t("diffFiles", { value: diff.length }),
     ...diff.slice(0, 12).map((entry) => `- ${entry.path || entry.file || "unknown"}`),
   ].join("\n");
 }
 
 async function notifyLifecycle(stateLabel, extra = {}) {
   const bits = [
-    `telegram-opencode ${stateLabel}`,
-    `PID: ${process.pid}`,
-    extra.baseUrl ? `OpenCode: ${extra.baseUrl}` : null,
-    `Time: ${new Date().toISOString()}`,
+    t("lifecycle", { state: stateLabel }),
+    t("pid", { value: process.pid }),
+    extra.baseUrl ? t("openCodeBase", { value: extra.baseUrl }) : null,
+    t("time", { value: new Date().toISOString() }),
   ].filter(Boolean);
 
   await sendTelegram(bits.join("\n"));

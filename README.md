@@ -21,6 +21,11 @@ Optional:
 - Environment variables still override the local config when present
 - Set `locale` in `config.local.json` to one of: `en`, `pt-BR`, `es`, `fr`, `ru`, `zh`, `de`
 
+## Languages
+
+- Supported locales: `en`, `pt-BR`, `es`, `fr`, `ru`, `zh`, `de`
+- Select the active locale with `locale` in `config.local.json`
+
 ## Scripts
 
 - Start: `npm run start`
