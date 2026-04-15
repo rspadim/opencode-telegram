@@ -5,6 +5,162 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { createTranslator } from "./i18n.mjs";
 
+type Nullable<T> = T | null;
+
+type LocalConfig = {
+  locale?: string;
+  telegram?: {
+    botToken?: string;
+    chatId?: string;
+  };
+  opencode?: {
+    baseUrl?: string;
+  };
+  runtime?: {
+    pollMs?: number;
+    sessionLimit?: number;
+    messageLimit?: number;
+    attachmentSizeLimit?: number;
+    replayPastMessages?: boolean;
+  };
+};
+
+type SessionRecord = {
+  id: string;
+  title?: string;
+  directory?: string;
+  projectID?: string;
+  parentID?: string;
+  worktree?: string;
+  vcs?: string;
+  name?: string;
+  time: {
+    created: number;
+    updated: number;
+  };
+};
+
+type MessagePart = {
+  type: string;
+  text?: string;
+  synthetic?: boolean;
+  ignored?: boolean;
+  mime?: string;
+  filename?: string;
+  url?: string;
+};
+
+type SessionMessage = {
+  info: {
+    id: string;
+    role?: string;
+    summary?: boolean;
+    time: {
+      completed?: number;
+    };
+  };
+  parts: MessagePart[];
+};
+
+type NotifierState = {
+  bootstrapped: boolean;
+  seen: Record<string, number>;
+  telegramOffset: number;
+};
+
+type TopicMapping = {
+  chatId: string;
+  threadId: number;
+  title: string;
+  topicName: string;
+  createdAt: number;
+};
+
+type TopicMap = Record<string, TopicMapping>;
+
+type NotificationItem = {
+  messageId?: string;
+  completedAt?: number;
+  text?: string;
+  sessionId?: string;
+  title?: string;
+  directory?: string;
+  threadId?: number;
+};
+
+type TelegramCommand = {
+  name: string;
+  args: string;
+  addressed: boolean;
+};
+
+type TelegramMessage = {
+  text?: string;
+  caption?: string;
+  message_thread_id?: number;
+  chat?: { id?: string | number };
+  from?: {
+    id?: string | number;
+    is_bot?: boolean;
+    first_name?: string;
+    last_name?: string;
+    username?: string;
+  };
+  photo?: Array<{ file_id: string; file_size?: number; file_unique_id?: string }>;
+  document?: { file_id?: string; file_size?: number; mime_type?: string; file_name?: string; file_unique_id?: string };
+  audio?: { file_id?: string; file_size?: number; mime_type?: string; file_name?: string; file_unique_id?: string };
+  voice?: { file_id?: string; file_size?: number; mime_type?: string; file_unique_id?: string };
+  video?: { file_id?: string; file_size?: number; mime_type?: string; file_name?: string; file_unique_id?: string };
+};
+
+type TelegramUpdate = {
+  update_id?: number;
+  message?: TelegramMessage;
+};
+
+type RunningServerHandle = {
+  url: string;
+  close: () => void;
+};
+
+type FetchJsonOptions = {
+  allowFailure?: boolean;
+};
+
+type RequestJsonOptions = {
+  method?: string;
+  body?: unknown;
+};
+
+type TelegramSendPayload = {
+  chat_id: string;
+  text: string;
+  disable_web_page_preview: boolean;
+  message_thread_id?: number;
+};
+
+type AttachmentItem = {
+  fileId: string;
+  size?: number;
+  mime: string;
+  filename: string;
+};
+
+type AttachmentExtraction = {
+  parts: MessagePart[];
+  notes: string[];
+};
+
+type MappedThread = TopicMapping & { sessionId: string };
+
+type TelegramBotIdentity = {
+  username?: string;
+};
+
+type TelegramChatInfo = {
+  is_forum?: boolean;
+};
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, "..");
@@ -23,7 +179,7 @@ if (process.platform === "win32" && !String(process.env.PATH || "").toLowerCase(
   process.env.PATH = `${NPM_BIN}${PATH_DELIMITER}${process.env.PATH || ""}`;
 }
 
-const config = await loadLocalConfig();
+const config: LocalConfig = await loadLocalConfig();
 const LOCALE = config.locale || process.env.OPENCODE_LOCALE || "en";
 const t = createTranslator(LOCALE);
 const BOT_TOKEN = process.env.OPENCODE_TELEGRAM_BOT_TOKEN || config.telegram?.botToken;
@@ -48,13 +204,13 @@ if (!BOT_TOKEN || !CHAT_ID) {
   process.exit(1);
 }
 
-let serverHandle = null;
+let serverHandle: Nullable<RunningServerHandle> = null;
 let shuttingDown = false;
 await fs.mkdir(DATA_DIR, { recursive: true });
-const state = await loadState();
-const topicMap = await loadTopicMap();
-let chatInfo = null;
-let botInfo = null;
+const state: NotifierState = await loadState();
+const topicMap: TopicMap = await loadTopicMap();
+let chatInfo: Nullable<TelegramChatInfo> = null;
+let botInfo: Nullable<TelegramBotIdentity> = null;
 
 await acquireLock();
 await writePid();
@@ -77,8 +233,8 @@ while (!shuttingDown) {
   await sleep(POLL_MS);
 }
 
-async function ensureServer() {
-  let health = null;
+async function ensureServer(): Promise<string> {
+  let health: Nullable<{ healthy?: boolean } | { ok: false; status: number }> = null;
 
   try {
     health = await fetchJson(`${BASE_URL}/global/health`, { allowFailure: true });
@@ -86,7 +242,7 @@ async function ensureServer() {
     health = null;
   }
 
-  if (health?.healthy) {
+  if (health && "healthy" in health && health.healthy) {
     return BASE_URL;
   }
 
@@ -99,7 +255,7 @@ async function ensureServer() {
   return serverHandle.url;
 }
 
-async function loadLocalConfig() {
+async function loadLocalConfig(): Promise<LocalConfig> {
   try {
     const raw = await fs.readFile(CONFIG_PATH, "utf8");
     const parsed = JSON.parse(raw);
@@ -109,18 +265,18 @@ async function loadLocalConfig() {
   }
 }
 
-async function scanOnce(baseUrl) {
-  const sessions = await fetchJson(`${baseUrl}/session?limit=${SESSION_LIMIT}`);
+async function scanOnce(baseUrl: string): Promise<void> {
+  const sessions = await fetchJson<SessionRecord[]>(`${baseUrl}/session?limit=${SESSION_LIMIT}`);
   if (!Array.isArray(sessions)) {
     throw new Error("Unexpected /session response.");
   }
 
-  const notifications = [];
+  const notifications: NotificationItem[] = [];
 
   for (const session of sessions) {
-    const messages = await fetchJson(
-      `${baseUrl}/session/${encodeURIComponent(session.id)}/message?limit=${MESSAGE_LIMIT}`,
-    );
+      const messages = await fetchJson<SessionMessage[]>(
+        `${baseUrl}/session/${encodeURIComponent(session.id)}/message?limit=${MESSAGE_LIMIT}`,
+      );
 
     if (!Array.isArray(messages)) {
       continue;
@@ -189,7 +345,7 @@ async function scanOnce(baseUrl) {
   }
 }
 
-function extractText(parts) {
+function extractText(parts: MessagePart[]): string {
   if (!Array.isArray(parts)) {
     return "";
   }
@@ -205,7 +361,7 @@ function extractText(parts) {
   return truncate(text.replace(/\s+/g, " "), 700);
 }
 
-function formatTelegramMessage(item) {
+function formatTelegramMessage(item: NotificationItem): string {
   const folder = item.directory ? path.basename(item.directory) : t("unknownFolder");
   return [
     t("finishedStep"),
@@ -216,15 +372,21 @@ function formatTelegramMessage(item) {
   ].join("\n");
 }
 
-async function sendTelegram(text) {
-  const payload = {
+function formatTopicTelegramMessage(item: NotificationItem): string {
+  return item.text;
+}
+
+async function sendTelegram(text: string, item?: NotificationItem): Promise<void> {
+  const payload: TelegramSendPayload = {
     chat_id: CHAT_ID,
     text,
     disable_web_page_preview: true,
   };
 
-  const item = arguments[1];
   const threadId = await getThreadIdForItem(item);
+  if (threadId && item?.sessionId && text === formatTelegramMessage(item)) {
+    payload.text = formatTopicTelegramMessage(item);
+  }
   if (threadId) {
     payload.message_thread_id = threadId;
   }
@@ -253,7 +415,7 @@ async function sendTelegram(text) {
   await maybeNotifyDesktop(arguments[1]);
 }
 
-async function fetchJson(url, options = {}) {
+async function fetchJson<T = any>(url: string, options: FetchJsonOptions = {}): Promise<T | { ok: false; status: number }> {
   const response = await fetch(url, {
     headers: {
       accept: "application/json",
@@ -270,14 +432,14 @@ async function fetchJson(url, options = {}) {
   return response.json();
 }
 
-async function postJson(url, body) {
+async function postJson<T = any>(url: string, body: unknown): Promise<T> {
   return requestJson(url, {
     method: "POST",
     body,
   });
 }
 
-async function requestJson(url, options = {}) {
+async function requestJson<T = any>(url: string, options: RequestJsonOptions = {}): Promise<T> {
   const response = await fetch(url, {
     method: options.method || "GET",
     headers: {
@@ -294,7 +456,7 @@ async function requestJson(url, options = {}) {
   return response.json();
 }
 
-async function loadState() {
+async function loadState(): Promise<NotifierState> {
   try {
     const raw = await fs.readFile(STATE_PATH, "utf8");
     const parsed = JSON.parse(raw);
@@ -312,7 +474,7 @@ async function loadState() {
   }
 }
 
-async function loadTopicMap() {
+async function loadTopicMap(): Promise<TopicMap> {
   try {
     const raw = await fs.readFile(TOPIC_MAP_PATH, "utf8");
     const parsed = JSON.parse(raw);
@@ -342,7 +504,7 @@ async function saveState() {
   );
 }
 
-async function appendLog(event, payload = {}) {
+async function appendLog(event: string, payload: Record<string, unknown> = {}): Promise<void> {
   const line = JSON.stringify({
     time: new Date().toISOString(),
     event,
@@ -390,7 +552,7 @@ async function acquireLock() {
   });
 }
 
-async function readExistingPid(filePath) {
+async function readExistingPid(filePath: string): Promise<number | null> {
   try {
     const raw = (await fs.readFile(filePath, "utf8")).trim();
     const pid = Number(raw);
@@ -447,32 +609,32 @@ async function shutdown() {
   process.exit(0);
 }
 
-function clamp(value, min, max) {
+function clamp(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) {
     return min;
   }
   return Math.min(Math.max(value, min), max);
 }
 
-function truncate(text, max) {
+function truncate(text: string, max: number): string {
   if (text.length <= max) {
     return text;
   }
   return `${text.slice(0, max - 3)}...`;
 }
 
-function sleep(ms) {
+function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function formatError(error) {
+function formatError(error: unknown): string {
   if (error instanceof Error) {
     return error.stack || error.message;
   }
   return String(error);
 }
 
-async function maybeNotifyDesktop(item) {
+async function maybeNotifyDesktop(item?: NotificationItem): Promise<void> {
   if (!ENABLE_DESKTOP_NOTIFY || !item) {
     return;
   }
@@ -488,7 +650,7 @@ async function maybeNotifyDesktop(item) {
   }
 }
 
-async function processTelegramUpdates(baseUrl) {
+async function processTelegramUpdates(baseUrl: string): Promise<void> {
   const offset = state.telegramOffset > 0 ? state.telegramOffset : undefined;
   const response = await fetchTelegramJson("getUpdates", {
     offset,
@@ -513,7 +675,7 @@ async function processTelegramUpdates(baseUrl) {
   }
 }
 
-async function handleTelegramMessage(baseUrl, message) {
+async function handleTelegramMessage(baseUrl: string, message?: TelegramMessage): Promise<void> {
   if (!message?.chat?.id || String(message.chat.id) !== String(CHAT_ID)) {
     return;
   }
@@ -533,7 +695,7 @@ async function handleTelegramMessage(baseUrl, message) {
   await handleTopicTelegramMessage(baseUrl, message, command);
 }
 
-async function handleGeneralTelegramMessage(baseUrl, message, command) {
+async function handleGeneralTelegramMessage(baseUrl: string, message: TelegramMessage, command: TelegramCommand | null): Promise<void> {
   if (!command || !command.addressed) {
     return;
   }
@@ -624,7 +786,7 @@ async function handleGeneralTelegramMessage(baseUrl, message, command) {
   await sendTelegram(t("unknownCommand"));
 }
 
-async function handleTopicTelegramMessage(baseUrl, message, command) {
+async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMessage, command: TelegramCommand | null): Promise<void> {
   const mapping = findMappingByThreadId(message.message_thread_id);
 
   if (command) {
@@ -763,6 +925,16 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
       return;
     }
 
+    if (command.name === "download") {
+      if (!mapping) {
+        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        return;
+      }
+
+      await sendSessionTranscript(baseUrl, mapping, message.message_thread_id);
+      return;
+    }
+
     if (command.name === "help") {
       await sendTelegram(await formatHelp(true), { threadId: message.message_thread_id });
       return;
@@ -795,11 +967,11 @@ async function handleTopicTelegramMessage(baseUrl, message, command) {
   await sendTelegram(t("forwardedToSession", { sessionId: mapping.sessionId }), { threadId: message.message_thread_id });
 }
 
-function extractTelegramText(message) {
+function extractTelegramText(message: TelegramMessage): string {
   return String(message?.text || message?.caption || "").trim();
 }
 
-async function parseTelegramCommand(text) {
+async function parseTelegramCommand(text: string): Promise<TelegramCommand | null> {
   const bot = await getBotInfo();
   const username = String(bot?.username || "").trim();
   const original = text.trim();
@@ -837,7 +1009,7 @@ async function parseTelegramCommand(text) {
   };
 }
 
-async function createSession(baseUrl, title) {
+async function createSession(baseUrl: string, title: string): Promise<SessionRecord> {
   const session = await postJson(`${baseUrl}/session`, {
     title,
   });
@@ -849,7 +1021,7 @@ async function createSession(baseUrl, title) {
   return session;
 }
 
-async function promptSession(baseUrl, sessionId, parts) {
+async function promptSession(baseUrl: string, sessionId: string, parts: MessagePart[]): Promise<SessionMessage> {
   const result = await postJson(`${baseUrl}/session/${encodeURIComponent(sessionId)}/message`, {
     parts,
   });
@@ -861,7 +1033,7 @@ async function promptSession(baseUrl, sessionId, parts) {
   return result;
 }
 
-async function buildOpencodePartsFromTelegramMessage(message) {
+async function buildOpencodePartsFromTelegramMessage(message: TelegramMessage): Promise<MessagePart[]> {
   const parts = [];
   const text = extractTelegramText(message);
   const header = formatTelegramAuthor(message);
@@ -886,13 +1058,13 @@ async function buildOpencodePartsFromTelegramMessage(message) {
   return parts;
 }
 
-function formatTelegramAuthor(message) {
+function formatTelegramAuthor(message: TelegramMessage): string {
   const name = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(" ").trim();
   const username = message.from?.username ? `@${message.from.username}` : null;
   return [`[Telegram]`, name || username || `user-${message.from?.id || "unknown"}`].filter(Boolean).join(" ");
 }
 
-async function extractTelegramAttachments(message) {
+async function extractTelegramAttachments(message: TelegramMessage): Promise<AttachmentExtraction> {
   const items = [];
 
   if (Array.isArray(message.photo) && message.photo.length > 0) {
@@ -962,7 +1134,7 @@ async function extractTelegramAttachments(message) {
   return { parts, notes };
 }
 
-async function downloadTelegramFile(fileId) {
+async function downloadTelegramFile(fileId: string): Promise<Buffer> {
   const file = await fetchTelegramJson("getFile", { file_id: fileId });
   if (!file?.file_path) {
     throw new Error(`Telegram file path missing for ${fileId}`);
@@ -976,11 +1148,11 @@ async function downloadTelegramFile(fileId) {
   return Buffer.from(await response.arrayBuffer());
 }
 
-function toDataUrl(mime, buffer) {
+function toDataUrl(mime: string, buffer: Buffer): string {
   return `data:${mime};base64,${buffer.toString("base64")}`;
 }
 
-async function fetchTelegramJson(method, body) {
+async function fetchTelegramJson<T = any>(method: string, body: unknown): Promise<T> {
   const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
     method: "POST",
     headers: {
@@ -1001,7 +1173,7 @@ async function fetchTelegramJson(method, body) {
   return data.result;
 }
 
-async function getThreadIdForItem(item) {
+async function getThreadIdForItem(item?: NotificationItem): Promise<number | null> {
   if (item?.threadId) {
     return item.threadId;
   }
@@ -1053,7 +1225,7 @@ async function getThreadIdForItem(item) {
   return data.result.message_thread_id;
 }
 
-async function getChatInfo() {
+async function getChatInfo(): Promise<TelegramChatInfo> {
   if (chatInfo) {
     return chatInfo;
   }
@@ -1072,7 +1244,7 @@ async function getChatInfo() {
   return chatInfo;
 }
 
-async function getBotInfo() {
+async function getBotInfo(): Promise<TelegramBotIdentity> {
   if (botInfo) {
     return botInfo;
   }
@@ -1081,7 +1253,7 @@ async function getBotInfo() {
   return botInfo;
 }
 
-function findMappingByThreadId(threadId) {
+function findMappingByThreadId(threadId: number): MappedThread | null {
   for (const [sessionId, value] of Object.entries(topicMap)) {
     if (Number(value?.threadId) === Number(threadId)) {
       return {
@@ -1094,7 +1266,7 @@ function findMappingByThreadId(threadId) {
   return null;
 }
 
-function formatTopicList() {
+function formatTopicList(): string {
   const entries = Object.entries(topicMap);
   if (entries.length === 0) {
     return t("noLinkedTopics");
@@ -1106,12 +1278,12 @@ function formatTopicList() {
   ].join("\n");
 }
 
-async function formatBridgeStatus(baseUrl) {
+async function formatBridgeStatus(baseUrl: string): Promise<string> {
   const statuses = await fetchJson(`${baseUrl}/session/status`).catch(() => ({}));
   const counts = {};
 
   for (const value of Object.values(statuses || {})) {
-    const key = value?.type || "unknown";
+    const key = typeof value === "object" && value && "type" in value ? String((value as { type?: string }).type || "unknown") : "unknown";
     counts[key] = (counts[key] || 0) + 1;
   }
 
@@ -1128,7 +1300,7 @@ async function formatBridgeStatus(baseUrl) {
   ].join("\n");
 }
 
-async function formatHelp(inTopic = false) {
+async function formatHelp(inTopic = false): Promise<string> {
   const bot = await getBotInfo();
   const mention = bot?.username ? `@${bot.username}` : "@bot";
 
@@ -1148,6 +1320,7 @@ async function formatHelp(inTopic = false) {
       t("helpTopicFork"),
       t("helpTopicShare"),
       t("helpTopicArchive"),
+      "/download - export the recent session transcript as a file",
       t("helpTopicLink"),
       t("helpTopicUnlink"),
       t("helpTopicHelp"),
@@ -1178,7 +1351,7 @@ async function formatHelp(inTopic = false) {
   ].join("\n");
 }
 
-async function formatSessions(baseUrl, args) {
+async function formatSessions(baseUrl: string, args?: string): Promise<string> {
   const limit = clamp(Number(args || 10), 1, 20);
   const sessions = await fetchJson(`${baseUrl}/session?limit=${limit}`);
   if (!Array.isArray(sessions) || sessions.length === 0) {
@@ -1191,7 +1364,7 @@ async function formatSessions(baseUrl, args) {
   ].join("\n");
 }
 
-async function formatSessionDetails(baseUrl, sessionId) {
+async function formatSessionDetails(baseUrl: string, sessionId?: string): Promise<string> {
   const target = String(sessionId || "").trim();
   if (!target) {
     return t("sessionUsage");
@@ -1211,7 +1384,7 @@ async function formatSessionDetails(baseUrl, sessionId) {
   ].filter(Boolean).join("\n");
 }
 
-async function formatProject(baseUrl) {
+async function formatProject(baseUrl: string): Promise<string> {
   const project = await fetchJson(`${baseUrl}/project/current`);
   return [
     t("project", { value: project.name || t("unknownProject") }),
@@ -1221,7 +1394,7 @@ async function formatProject(baseUrl) {
   ].join("\n");
 }
 
-async function formatProjects(baseUrl, args) {
+async function formatProjects(baseUrl: string, args?: string): Promise<string> {
   const limit = clamp(Number(args || 10), 1, 20);
   const projects = await fetchJson(`${baseUrl}/project`);
   if (!Array.isArray(projects) || projects.length === 0) {
@@ -1234,7 +1407,7 @@ async function formatProjects(baseUrl, args) {
   ].join("\n");
 }
 
-async function formatProviders(baseUrl) {
+async function formatProviders(baseUrl: string): Promise<string> {
   const data = await fetchJson(`${baseUrl}/config/providers`);
   const providers = Array.isArray(data?.providers) ? data.providers : [];
   if (providers.length === 0) {
@@ -1250,7 +1423,7 @@ async function formatProviders(baseUrl) {
   ].join("\n");
 }
 
-async function formatMappedTopicStatus(baseUrl, mapping) {
+async function formatMappedTopicStatus(baseUrl: string, mapping: MappedThread): Promise<string> {
   const statusMap = await fetchJson(`${baseUrl}/session/status`).catch(() => ({}));
   const liveStatus = statusMap?.[mapping.sessionId]?.type || "unknown";
   const session = await fetchJson(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`).catch(() => null);
@@ -1265,7 +1438,7 @@ async function formatMappedTopicStatus(baseUrl, mapping) {
   ].filter(Boolean).join("\n");
 }
 
-async function formatTodo(baseUrl, sessionId) {
+async function formatTodo(baseUrl: string, sessionId: string): Promise<string> {
   const todos = await fetchJson(`${baseUrl}/session/${encodeURIComponent(sessionId)}/todo`).catch(() => []);
   if (!Array.isArray(todos) || todos.length === 0) {
     return t("noTodos");
@@ -1277,7 +1450,7 @@ async function formatTodo(baseUrl, sessionId) {
   ].join("\n");
 }
 
-async function formatDiff(baseUrl, sessionId) {
+async function formatDiff(baseUrl: string, sessionId: string): Promise<string> {
   const diff = await fetchJson(`${baseUrl}/session/${encodeURIComponent(sessionId)}/diff`).catch(() => []);
   if (!Array.isArray(diff) || diff.length === 0) {
     return t("noDiff");
@@ -1289,7 +1462,7 @@ async function formatDiff(baseUrl, sessionId) {
   ].join("\n");
 }
 
-async function notifyLifecycle(stateLabel, extra = {}) {
+async function notifyLifecycle(stateLabel: string, extra: Record<string, unknown> = {}): Promise<void> {
   const bits = [
     t("lifecycle", { state: stateLabel }),
     t("pid", { value: process.pid }),
@@ -1301,15 +1474,74 @@ async function notifyLifecycle(stateLabel, extra = {}) {
   await appendLog(`lifecycle-${stateLabel}`, extra);
 }
 
-async function fetchProjectById(baseUrl, projectId) {
+async function sendSessionTranscript(baseUrl: string, mapping: MappedThread, threadId: number): Promise<void> {
+  const messages = await fetchJson<SessionMessage[]>(
+    `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/message?limit=100`,
+  );
+
+  if (!Array.isArray(messages) || messages.length === 0) {
+    await sendTelegram("No transcript content found for this session.", { threadId });
+    return;
+  }
+
+  const content = renderSessionTranscript(mapping, messages);
+  const fileName = `${sanitizeFileName(mapping.title || mapping.sessionId)}.md`;
+  await sendTelegramDocument(fileName, content, threadId);
+}
+
+function renderSessionTranscript(mapping: MappedThread, messages: SessionMessage[]): string {
+  const blocks = [
+    `# ${mapping.title || mapping.sessionId}`,
+    `Session ID: ${mapping.sessionId}`,
+    "",
+  ];
+
+  for (const message of messages) {
+    const role = message.info.role || "unknown";
+    const text = extractText(message.parts);
+    if (!text) {
+      continue;
+    }
+    blocks.push(`## ${role}`);
+    blocks.push(text);
+    blocks.push("");
+  }
+
+  return blocks.join("\n");
+}
+
+async function sendTelegramDocument(fileName: string, content: string, threadId: number): Promise<void> {
+  const form = new FormData();
+  form.set("chat_id", CHAT_ID);
+  form.set("message_thread_id", String(threadId));
+  form.set("document", new Blob([content], { type: "text/markdown" }), fileName);
+
+  const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
+    method: "POST",
+    body: form,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Telegram document request failed: ${response.status} ${response.statusText}`);
+  }
+}
+
+function sanitizeFileName(value: string): string {
+  return String(value || "session")
+    .replace(/[\\/:*?"<>|]/g, "-")
+    .replace(/\s+/g, "-")
+    .slice(0, 80);
+}
+
+async function fetchProjectById(baseUrl: string, projectId?: string): Promise<SessionRecord | null> {
   if (!projectId) {
     return null;
   }
 
-  return fetchJson(`${baseUrl}/project/${encodeURIComponent(projectId)}`);
+  return fetchJson<SessionRecord>(`${baseUrl}/project/${encodeURIComponent(projectId)}`) as Promise<SessionRecord>;
 }
 
-function topicNameForSession(sessionId, title) {
+function topicNameForSession(sessionId?: string, title?: string): string {
   const shortId = truncate(String(sessionId || "session").trim(), 10);
   const clean = String(title || t("untitledSession"))
     .replace(/\s+/g, " ")
@@ -1318,7 +1550,7 @@ function topicNameForSession(sessionId, title) {
   return truncate(`[${shortId}] ${clean || t("untitledSession")}`, 120);
 }
 
-function defaultOpencodeBin() {
+function defaultOpencodeBin(): string {
   if (process.platform === "win32") {
     return path.join(NPM_BIN, "opencode.cmd");
   }
@@ -1326,7 +1558,7 @@ function defaultOpencodeBin() {
   return "opencode";
 }
 
-function getDesktopNotifyCommand() {
+function getDesktopNotifyCommand(): string {
   if (process.platform === "darwin") {
     return "osascript";
   }
@@ -1334,7 +1566,7 @@ function getDesktopNotifyCommand() {
   return "notify-send";
 }
 
-function getDesktopNotifyArgs(item) {
+function getDesktopNotifyArgs(item: NotificationItem): string[] {
   const title = `OpenCode: ${truncate(item.title || t("untitledSession"), 60)}`;
   const body = truncate(item.text || "Step completed.", 220);
 
@@ -1345,15 +1577,15 @@ function getDesktopNotifyArgs(item) {
   return [title, body];
 }
 
-function toAppleScriptString(value) {
+function toAppleScriptString(value: unknown): string {
   return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
-function escapeRegex(value) {
+function escapeRegex(value: unknown): string {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function createOpencodeServer(options) {
+function createOpencodeServer(options: { hostname: string; port: number; timeout: number }): Promise<RunningServerHandle> {
   return new Promise((resolve, reject) => {
     const args = [
       "serve",

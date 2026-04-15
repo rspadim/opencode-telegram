@@ -31,6 +31,8 @@ Optional:
 
 - Start: `npm run start`
 - Check syntax: `npm run check`
+- Type check: `npm run typecheck`
+- Test: `npm run test`
 - Stop: `npm run stop`
 - Status: `npm run status`
 - Windows tray: `npm run tray:windows`
@@ -75,6 +77,7 @@ Generated at runtime:
 - `src/` contains the runtime application code
 - Root wrapper files keep the CLI scripts and local launchers stable
 - `data/` contains runtime state only
+- TypeScript migration is in progress for `src/` modules
 
 ## Telegram Commands
 
@@ -86,7 +89,7 @@ Generated at runtime:
 - In the general chat, `/sessions`, `/session`, `/project`, `/projects` and `/providers` expose OpenCode management info
 - In any linked topic, plain messages are forwarded into the mapped OpenCode session
 - In any linked topic, `/link <session-id>` rebinds the topic to an existing session
-- In any linked topic, `/todo`, `/diff`, `/abort`, `/fork`, `/share` and `/archive` act on the linked OpenCode session
+- In any linked topic, `/todo`, `/diff`, `/abort`, `/fork`, `/share`, `/archive` and `/download` act on the linked OpenCode session
 - In any linked topic, `/unlink` removes the mapping
 - In any chat, `/help` shows the available commands
 
