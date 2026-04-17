@@ -16,6 +16,11 @@ export type TelegramCommand = {
   addressed: boolean;
 };
 
+export type PaginationArgs = {
+  page: number;
+  pageSize: number;
+};
+
 export function parseTelegramCommandText(
   text: string,
   botUsername?: string
@@ -102,6 +107,49 @@ export function topicNameForSession(
   return truncate(`[${shortId}] ${clean || untitledSession}`, 120);
 }
 
+export function parsePaginationArgs(
+  args: string | undefined,
+  options: { defaultPageSize?: number; maxPageSize?: number } = {}
+): PaginationArgs | null {
+  const defaultPageSize = clampNumber(options.defaultPageSize, 10, 1, 100);
+  const maxPageSize = clampNumber(options.maxPageSize, 20, 1, 100);
+  const trimmed = String(args || "").trim();
+
+  if (!trimmed) {
+    return {
+      page: 1,
+      pageSize: Math.min(defaultPageSize, maxPageSize),
+    };
+  }
+
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length > 2) {
+    return null;
+  }
+
+  const page = Number(parts[0]);
+  if (!Number.isInteger(page) || page < 1) {
+    return null;
+  }
+
+  if (parts.length === 1) {
+    return {
+      page,
+      pageSize: Math.min(defaultPageSize, maxPageSize),
+    };
+  }
+
+  const pageSize = Number(parts[1]);
+  if (!Number.isInteger(pageSize) || pageSize < 1) {
+    return null;
+  }
+
+  return {
+    page,
+    pageSize: Math.min(pageSize, maxPageSize),
+  };
+}
+
 function truncate(text: string, max: number): string {
   if (text.length <= max) {
     return text;
@@ -111,4 +159,17 @@ function truncate(text: string, max: number): string {
 
 function escapeRegex(value: unknown): string {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function clampNumber(
+  value: number | undefined,
+  fallback: number,
+  min: number,
+  max: number
+): number {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+
+  return Math.min(Math.max(Number(value), min), max);
 }

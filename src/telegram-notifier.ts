@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { createTranslator } from "./i18n.mjs";
 import {
   findMappingByThreadId as findMappingByThreadIdShared,
+  parsePaginationArgs,
   parseTelegramCommandText,
   topicNameForSession as topicNameForSessionShared,
 } from "./notifier-helpers.mjs";
@@ -283,6 +284,8 @@ const MESSAGE_LIMIT = clamp(
   1,
   100
 );
+const LIST_PAGE_SIZE = 10;
+const MAX_LIST_PAGE_SIZE = 20;
 const ATTACHMENT_SIZE_LIMIT = clamp(
   Number(
     process.env.OPENCODE_ATTACHMENT_SIZE_LIMIT ||
@@ -1729,21 +1732,52 @@ async function formatHelp(inTopic = false): Promise<string> {
 }
 
 async function formatSessions(baseUrl: string, args?: string): Promise<string> {
-  const limit = clamp(Number(args || 10), 1, 20);
+  const pagination = parsePaginationArgs(args, {
+    defaultPageSize: LIST_PAGE_SIZE,
+    maxPageSize: MAX_LIST_PAGE_SIZE,
+  });
+  if (!pagination) {
+    return t("sessionsUsage");
+  }
+
+  const fetchLimit = pagination.page * pagination.pageSize;
   const sessions = await fetchJson<SessionRecord[]>(
-    `${baseUrl}/session?limit=${limit}`
+    `${baseUrl}/session?limit=${fetchLimit}`
   );
   if (!Array.isArray(sessions) || sessions.length === 0) {
     return t("noSessions");
   }
 
+  const startIndex = (pagination.page - 1) * pagination.pageSize;
+  const pageItems = sessions.slice(
+    startIndex,
+    startIndex + pagination.pageSize
+  );
+  if (pageItems.length === 0) {
+    return t("paginationOutOfRange", {
+      page: pagination.page,
+      command: "/sessions",
+    });
+  }
+
+  const start = startIndex + 1;
+  const end = startIndex + pageItems.length;
+  const hasNextPage = sessions.length === fetchLimit;
+
   return [
-    t("recentSessions", { value: sessions.length }),
-    ...sessions.map(
+    t("recentSessions", { value: pageItems.length }),
+    t("pageLine", { page: pagination.page, size: pagination.pageSize }),
+    t("showingRange", { start, end }),
+    ...pageItems.map(
       (session) =>
         `- ${truncate(session.title || t("untitledSession"), 48)} | ${session.id} | ${path.basename(session.directory || "") || t("unknownValue")}`
     ),
-  ].join("\n");
+    hasNextPage
+      ? t("nextPageHint", { command: "/sessions", page: pagination.page + 1 })
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 async function formatSessionDetails(
@@ -1786,21 +1820,49 @@ async function formatProject(baseUrl: string): Promise<string> {
 }
 
 async function formatProjects(baseUrl: string, args?: string): Promise<string> {
-  const limit = clamp(Number(args || 10), 1, 20);
+  const pagination = parsePaginationArgs(args, {
+    defaultPageSize: LIST_PAGE_SIZE,
+    maxPageSize: MAX_LIST_PAGE_SIZE,
+  });
+  if (!pagination) {
+    return t("projectsUsage");
+  }
+
   const projects = await fetchJson<SessionRecord[]>(`${baseUrl}/project`);
   if (!Array.isArray(projects) || projects.length === 0) {
     return t("noProjects");
   }
 
+  const startIndex = (pagination.page - 1) * pagination.pageSize;
+  const pageItems = projects.slice(
+    startIndex,
+    startIndex + pagination.pageSize
+  );
+  if (pageItems.length === 0) {
+    return t("paginationOutOfRange", {
+      page: pagination.page,
+      command: "/projects",
+    });
+  }
+
+  const start = startIndex + 1;
+  const end = startIndex + pageItems.length;
+  const hasNextPage = end < projects.length;
+
   return [
     t("projects", { value: projects.length }),
-    ...projects
-      .slice(0, limit)
-      .map(
-        (project) =>
-          `- ${project.name || t("unknownProject")} | ${project.id} | ${project.worktree}`
-      ),
-  ].join("\n");
+    t("pageLine", { page: pagination.page, size: pagination.pageSize }),
+    t("showingRange", { start, end }),
+    ...pageItems.map(
+      (project) =>
+        `- ${project.name || t("unknownProject")} | ${project.id} | ${project.worktree}`
+    ),
+    hasNextPage
+      ? t("nextPageHint", { command: "/projects", page: pagination.page + 1 })
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 async function formatProviders(baseUrl: string): Promise<string> {

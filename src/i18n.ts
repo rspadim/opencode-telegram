@@ -42,6 +42,9 @@ const MESSAGES: LocaleMap = {
     linkedTopics: "Linked topics: {value}",
     recentSessions: "Recent sessions: {value}",
     projects: "Projects: {value}",
+    pageLine: "Page: {page} | Page size: {size}",
+    showingRange: "Showing: {start}-{end}",
+    nextPageHint: "Next: {command} {page}",
     openCodeSessionsSummary: "OpenCode sessions: {value}",
     providers: "Providers: {value}",
     todoItems: "Todo items: {value}",
@@ -68,7 +71,10 @@ const MESSAGES: LocaleMap = {
     topicUnlinked: "Topic unlinked from the OpenCode session.",
     linkUsage: "Usage: /link <session-id>",
     sessionUsage: "Usage: /session <session-id>",
+    sessionsUsage: "Usage: /sessions [page] [page-size]",
+    projectsUsage: "Usage: /projects [page] [page-size]",
     renameUsage: "Usage: /rename <new title>",
+    paginationOutOfRange: "No results on page {page}. Try {command} 1.",
     linkedTopicToSession: "Linked this topic to session {sessionId}.",
     abortRequested: "Abort requested for session {sessionId}.",
     archivedSession: "Archived session {sessionId}.",
@@ -111,13 +117,13 @@ const MESSAGES: LocaleMap = {
     helpGeneralStatus:
       "{mention} /status - show bridge and OpenCode runtime status",
     helpGeneralSessions:
-      "{mention} /sessions [limit] - list recent OpenCode sessions",
+      "{mention} /sessions [page] [page-size] - list recent OpenCode sessions",
     helpGeneralSession:
       "{mention} /session <session-id> - inspect one OpenCode session",
     helpGeneralProject:
       "{mention} /project - show the current OpenCode project",
     helpGeneralProjects:
-      "{mention} /projects [limit] - list known OpenCode projects",
+      "{mention} /projects [page] [page-size] - list known OpenCode projects",
     helpGeneralProviders:
       "{mention} /providers - list configured providers and defaults",
     helpGeneralHelp: "{mention} /help - show this help message",
@@ -165,6 +171,9 @@ MESSAGES["pt-BR"] = {
   linkedTopics: "Topics vinculados: {value}",
   recentSessions: "Sessoes recentes: {value}",
   projects: "Projetos: {value}",
+  pageLine: "Pagina: {page} | Tamanho da pagina: {size}",
+  showingRange: "Mostrando: {start}-{end}",
+  nextPageHint: "Proxima: {command} {page}",
   openCodeSessionsSummary: "Sessoes OpenCode: {value}",
   providers: "Providers: {value}",
   todoItems: "Itens de todo: {value}",
@@ -193,7 +202,10 @@ MESSAGES["pt-BR"] = {
   topicUnlinked: "Topic desvinculado da sessao do OpenCode.",
   linkUsage: "Uso: /link <session-id>",
   sessionUsage: "Uso: /session <session-id>",
+  sessionsUsage: "Uso: /sessions [pagina] [tamanho-da-pagina]",
+  projectsUsage: "Uso: /projects [pagina] [tamanho-da-pagina]",
   renameUsage: "Uso: /rename <novo titulo>",
+  paginationOutOfRange: "Sem resultados na pagina {page}. Tente {command} 1.",
   linkedTopicToSession: "Este topic foi vinculado a sessao {sessionId}.",
   abortRequested: "Abort solicitado para a sessao {sessionId}.",
   archivedSession: "Sessao {sessionId} arquivada.",
@@ -235,12 +247,12 @@ MESSAGES["pt-BR"] = {
   helpGeneralStatus:
     "{mention} /status - mostra o status da ponte e do runtime OpenCode",
   helpGeneralSessions:
-    "{mention} /sessions [limit] - lista sessoes recentes do OpenCode",
+    "{mention} /sessions [pagina] [tamanho] - lista sessoes recentes do OpenCode",
   helpGeneralSession:
     "{mention} /session <session-id> - inspeciona uma sessao do OpenCode",
   helpGeneralProject: "{mention} /project - mostra o projeto atual do OpenCode",
   helpGeneralProjects:
-    "{mention} /projects [limit] - lista projetos conhecidos do OpenCode",
+    "{mention} /projects [pagina] [tamanho] - lista projetos conhecidos do OpenCode",
   helpGeneralProviders:
     "{mention} /providers - lista providers configurados e padroes",
   helpGeneralHelp: "{mention} /help - mostra esta ajuda",
@@ -283,6 +295,9 @@ MESSAGES.es = {
   linkedTopics: "Topics vinculados: {value}",
   recentSessions: "Sesiones recientes: {value}",
   projects: "Proyectos: {value}",
+  pageLine: "Pagina: {page} | Tamano de pagina: {size}",
+  showingRange: "Mostrando: {start}-{end}",
+  nextPageHint: "Siguiente: {command} {page}",
   openCodeSessionsSummary: "Sesiones de OpenCode: {value}",
   providers: "Proveedores: {value}",
   todoItems: "Tareas: {value}",
@@ -311,7 +326,11 @@ MESSAGES.es = {
   topicUnlinked: "Topic desvinculado de la sesion de OpenCode.",
   linkUsage: "Uso: /link <session-id>",
   sessionUsage: "Uso: /session <session-id>",
+  sessionsUsage: "Uso: /sessions [pagina] [tamano-de-pagina]",
+  projectsUsage: "Uso: /projects [pagina] [tamano-de-pagina]",
   renameUsage: "Uso: /rename <nuevo titulo>",
+  paginationOutOfRange:
+    "No hay resultados en la pagina {page}. Prueba {command} 1.",
   linkedTopicToSession: "Este topic se vinculo a la sesion {sessionId}.",
   abortRequested: "Se solicito abortar la sesion {sessionId}.",
   archivedSession: "Sesion {sessionId} archivada.",
@@ -353,13 +372,13 @@ MESSAGES.es = {
   helpGeneralStatus:
     "{mention} /status - muestra el estado del bridge y de OpenCode",
   helpGeneralSessions:
-    "{mention} /sessions [limit] - lista sesiones recientes de OpenCode",
+    "{mention} /sessions [pagina] [tamano] - lista sesiones recientes de OpenCode",
   helpGeneralSession:
     "{mention} /session <session-id> - inspecciona una sesion de OpenCode",
   helpGeneralProject:
     "{mention} /project - muestra el proyecto actual de OpenCode",
   helpGeneralProjects:
-    "{mention} /projects [limit] - lista proyectos conocidos de OpenCode",
+    "{mention} /projects [pagina] [tamano] - lista proyectos conocidos de OpenCode",
   helpGeneralProviders:
     "{mention} /providers - lista proveedores configurados y valores por defecto",
   helpGeneralHelp: "{mention} /help - muestra este mensaje de ayuda",

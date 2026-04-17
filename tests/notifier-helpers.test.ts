@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createTranslator } from "../src/i18n.ts";
 import {
   findMappingByThreadId,
+  parsePaginationArgs,
   parseTelegramCommandText,
   shouldReplayMessage,
   topicNameForSession,
@@ -132,5 +133,49 @@ describe("topicNameForSession", () => {
     expect(topicNameForSession("ses_1", "", "Sessao sem titulo")).toBe(
       "[ses_1] Sessao sem titulo"
     );
+  });
+});
+
+describe("parsePaginationArgs", () => {
+  it("uses defaults when no args are provided", () => {
+    expect(
+      parsePaginationArgs("", { defaultPageSize: 10, maxPageSize: 20 })
+    ).toEqual({
+      page: 1,
+      pageSize: 10,
+    });
+  });
+
+  it("parses a page number", () => {
+    expect(
+      parsePaginationArgs("3", { defaultPageSize: 10, maxPageSize: 20 })
+    ).toEqual({
+      page: 3,
+      pageSize: 10,
+    });
+  });
+
+  it("parses page and page size", () => {
+    expect(
+      parsePaginationArgs("2 15", { defaultPageSize: 10, maxPageSize: 20 })
+    ).toEqual({
+      page: 2,
+      pageSize: 15,
+    });
+  });
+
+  it("clamps the page size to the configured maximum", () => {
+    expect(
+      parsePaginationArgs("2 50", { defaultPageSize: 10, maxPageSize: 20 })
+    ).toEqual({
+      page: 2,
+      pageSize: 20,
+    });
+  });
+
+  it("rejects invalid values", () => {
+    expect(parsePaginationArgs("0")).toBeNull();
+    expect(parsePaginationArgs("next")).toBeNull();
+    expect(parsePaginationArgs("1 2 3")).toBeNull();
   });
 });
