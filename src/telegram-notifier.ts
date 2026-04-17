@@ -4,6 +4,11 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { createTranslator } from "./i18n.mjs";
+import {
+  findMappingByThreadId as findMappingByThreadIdShared,
+  parseTelegramCommandText,
+  topicNameForSession as topicNameForSessionShared,
+} from "./notifier-helpers.mjs";
 
 type Nullable<T> = T | null;
 
@@ -787,7 +792,7 @@ async function handleGeneralTelegramMessage(baseUrl: string, message: TelegramMe
 }
 
 async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMessage, command: TelegramCommand | null): Promise<void> {
-  const mapping = findMappingByThreadId(message.message_thread_id);
+  const mapping = findMappingByThreadIdShared(message.message_thread_id, topicMap);
 
   if (command) {
     if (command.name === "unlink") {
@@ -818,7 +823,7 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
         chatId: CHAT_ID,
         threadId: message.message_thread_id,
         title: session.title || t("untitledSession"),
-        topicName: topicNameForSession(session.id, session.title),
+        topicName: topicNameForSessionShared(session.id, session.title, t("untitledSession")),
         createdAt: Date.now(),
       };
       await saveTopicMap();
@@ -933,7 +938,7 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
 
       const nextTitle = command.args.trim();
       if (!nextTitle) {
-        await sendTelegram("Usage: /rename <new title>", { threadId: message.message_thread_id });
+        await sendTelegram(t("renameUsage"), { threadId: message.message_thread_id });
         return;
       }
 
@@ -944,11 +949,11 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
 
       if (topicMap[mapping.sessionId]) {
         topicMap[mapping.sessionId].title = updated.title || nextTitle;
-        topicMap[mapping.sessionId].topicName = topicNameForSession(mapping.sessionId, updated.title || nextTitle);
+        topicMap[mapping.sessionId].topicName = topicNameForSessionShared(mapping.sessionId, updated.title || nextTitle, t("untitledSession"));
         await saveTopicMap();
       }
 
-      await sendTelegram(`Session renamed to: ${updated.title || nextTitle}`, { threadId: message.message_thread_id });
+      await sendTelegram(t("renamedSession", { title: updated.title || nextTitle }), { threadId: message.message_thread_id });
       return;
     }
 
@@ -960,13 +965,13 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
 
       const children = await fetchJson<SessionRecord[]>(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/children`);
       if (!Array.isArray(children) || children.length === 0) {
-        await sendTelegram("No child sessions found.", { threadId: message.message_thread_id });
+        await sendTelegram(t("noChildSessions"), { threadId: message.message_thread_id });
         return;
       }
 
       await sendTelegram(
         [
-          `Child sessions: ${children.length}`,
+          t("childSessions", { value: children.length }),
           ...children.slice(0, 10).map((child) => `- ${child.title || t("untitledSession")} | ${child.id}`),
         ].join("\n"),
         { threadId: message.message_thread_id },
@@ -985,7 +990,7 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
       });
       delete topicMap[mapping.sessionId];
       await saveTopicMap();
-      await sendTelegram(`Deleted session ${mapping.sessionId}.`, { threadId: message.message_thread_id });
+      await sendTelegram(t("deletedSession", { sessionId: mapping.sessionId }), { threadId: message.message_thread_id });
       return;
     }
 
@@ -1037,40 +1042,7 @@ function extractTelegramText(message: TelegramMessage): string {
 
 async function parseTelegramCommand(text: string): Promise<TelegramCommand | null> {
   const bot = await getBotInfo();
-  const username = String(bot?.username || "").trim();
-  const original = text.trim();
-  let normalized = original;
-  let addressed = false;
-
-  if (username) {
-    const mentionPrefix = new RegExp(`^@${escapeRegex(username)}\\s+`, "i");
-    if (mentionPrefix.test(normalized)) {
-      normalized = normalized.replace(mentionPrefix, "");
-      addressed = true;
-    }
-  }
-
-  const match = normalized.match(/^\/(\w+)(?:@(\w+))?(?:\s+(.*))?$/i);
-  if (!match) {
-    return null;
-  }
-
-  if (match[2] && username) {
-    if (match[2].toLowerCase() !== username.toLowerCase()) {
-      return null;
-    }
-    addressed = true;
-  }
-
-  if (!addressed && username && !original.startsWith("/")) {
-    return null;
-  }
-
-  return {
-    name: String(match[1] || "").toLowerCase(),
-    args: String(match[3] || "").trim(),
-    addressed,
-  };
+  return parseTelegramCommandText(text, bot?.username);
 }
 
 async function createSession(baseUrl: string, title: string): Promise<SessionRecord> {
@@ -1256,7 +1228,7 @@ async function getThreadIdForItem(item?: NotificationItem): Promise<number | nul
     return existing.threadId;
   }
 
-  const name = topicNameForSession(item.sessionId, item.title);
+  const name = topicNameForSessionShared(item.sessionId, item.title, t("untitledSession"));
   const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/createForumTopic`, {
     method: "POST",
     headers: {
@@ -1317,19 +1289,6 @@ async function getBotInfo(): Promise<TelegramBotIdentity> {
   return botInfo;
 }
 
-function findMappingByThreadId(threadId: number): MappedThread | null {
-  for (const [sessionId, value] of Object.entries(topicMap)) {
-    if (Number(value?.threadId) === Number(threadId)) {
-      return {
-        sessionId,
-        ...value,
-      };
-    }
-  }
-
-  return null;
-}
-
 function formatTopicList(): string {
   const entries = Object.entries(topicMap);
   if (entries.length === 0) {
@@ -1384,10 +1343,10 @@ async function formatHelp(inTopic = false): Promise<string> {
       t("helpTopicFork"),
       t("helpTopicShare"),
       t("helpTopicArchive"),
-      "/rename <new title> - rename the current session",
-      "/children - list child sessions created from this one",
-      "/delete - delete the current session and unlink this topic",
-      "/download - export the recent session transcript as a file",
+      t("helpTopicRename"),
+      t("helpTopicChildren"),
+      t("helpTopicDelete"),
+      t("helpTopicDownload"),
       t("helpTopicLink"),
       t("helpTopicUnlink"),
       t("helpTopicHelp"),
@@ -1427,7 +1386,7 @@ async function formatSessions(baseUrl: string, args?: string): Promise<string> {
 
   return [
     t("recentSessions", { value: sessions.length }),
-    ...sessions.map((session) => `- ${truncate(session.title || t("untitledSession"), 48)} | ${session.id} | ${path.basename(session.directory || "") || "unknown"}`),
+    ...sessions.map((session) => `- ${truncate(session.title || t("untitledSession"), 48)} | ${session.id} | ${path.basename(session.directory || "") || t("unknownValue")}`),
   ].join("\n");
 }
 
@@ -1444,7 +1403,7 @@ async function formatSessionDetails(baseUrl: string, sessionId?: string): Promis
     t("id", { value: session.id }),
     session.projectID ? t("projectId", { value: session.projectID }) : null,
     project ? t("project", { value: project.name || project.worktree }) : null,
-    t("directory", { value: session.directory || "unknown" }),
+    t("directory", { value: session.directory || t("unknownValue") }),
     t("created", { value: new Date(session.time.created).toISOString() }),
     t("updated", { value: new Date(session.time.updated).toISOString() }),
     session.parentID ? t("parent", { value: session.parentID }) : null,
@@ -1547,7 +1506,7 @@ async function sendSessionTranscript(baseUrl: string, mapping: MappedThread, thr
   );
 
   if (!Array.isArray(messages) || messages.length === 0) {
-    await sendTelegram("No transcript content found for this session.", { threadId });
+    await sendTelegram(t("noTranscriptContent"), { threadId });
     return;
   }
 
@@ -1608,15 +1567,6 @@ async function fetchProjectById(baseUrl: string, projectId?: string): Promise<Se
   return fetchJson<SessionRecord>(`${baseUrl}/project/${encodeURIComponent(projectId)}`) as Promise<SessionRecord>;
 }
 
-function topicNameForSession(sessionId?: string, title?: string): string {
-  const shortId = truncate(String(sessionId || "session").trim(), 10);
-  const clean = String(title || t("untitledSession"))
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return truncate(`[${shortId}] ${clean || t("untitledSession")}`, 120);
-}
-
 function defaultOpencodeBin(): string {
   if (process.platform === "win32") {
     return path.join(NPM_BIN, "opencode.cmd");
@@ -1646,10 +1596,6 @@ function getDesktopNotifyArgs(item: NotificationItem): string[] {
 
 function toAppleScriptString(value: unknown): string {
   return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-}
-
-function escapeRegex(value: unknown): string {
-  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function createOpencodeServer(options: { hostname: string; port: number; timeout: number }): Promise<RunningServerHandle> {

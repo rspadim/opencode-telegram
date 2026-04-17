@@ -17,6 +17,16 @@ describe("createTranslator", () => {
     const t = createTranslator("en");
     expect(t("project", { value: "demo" })).toBe("Project: demo");
   });
+
+  it("supports configured pt-BR strings", () => {
+    const t = createTranslator("pt-BR");
+    expect(t("renameUsage")).toBe("Uso: /rename <novo titulo>");
+  });
+
+  it("keeps localized keys available in other locales", () => {
+    const t = createTranslator("de");
+    expect(t("deletedSession", { sessionId: "ses_1" })).toBe("Sitzung ses_1 geloescht.");
+  });
 });
 
 describe("parseTelegramCommandText", () => {
@@ -38,6 +48,14 @@ describe("parseTelegramCommandText", () => {
 
   it("rejects commands for a different bot", () => {
     expect(parseTelegramCommandText("/status@other_bot", "demo_bot")).toBeNull();
+  });
+
+  it("parses plain slash commands as not addressed", () => {
+    expect(parseTelegramCommandText("/status", "demo_bot")).toEqual({
+      name: "status",
+      args: "",
+      addressed: false,
+    });
   });
 });
 
@@ -85,10 +103,18 @@ describe("findMappingByThreadId", () => {
     expect(found?.sessionId).toBe("ses_1");
     expect(found?.threadId).toBe(7);
   });
+
+  it("returns null when thread is unmapped", () => {
+    expect(findMappingByThreadId(99, {})).toBeNull();
+  });
 });
 
 describe("topicNameForSession", () => {
   it("builds a prefixed topic name", () => {
     expect(topicNameForSession("ses_1234567890", "My Session", "Untitled session")).toBe("[ses_123...] My Session");
+  });
+
+  it("falls back to untitled label", () => {
+    expect(topicNameForSession("ses_1", "", "Sessao sem titulo")).toBe("[ses_1] Sessao sem titulo");
   });
 });

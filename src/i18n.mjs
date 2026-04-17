@@ -3,6 +3,7 @@ const MESSAGES = {
     untitledSession: "Untitled session",
     unknownFolder: "unknown-folder",
     unknownProject: "Unnamed project",
+    unknownValue: "unknown",
     noLinkedTopics: "No linked topics yet.",
     noSessions: "No sessions found.",
     noProjects: "No projects found.",
@@ -10,6 +11,8 @@ const MESSAGES = {
     noTodos: "No todo items for this session.",
     noDiff: "No diff entries for this session.",
     noLiveStatus: "OpenCode sessions: no live status",
+    noChildSessions: "No child sessions found.",
+    noTranscriptContent: "No transcript content found for this session.",
     finishedStep: "OpenCode finished a step.",
     project: "Project: {value}",
     projectId: "Project ID: {value}",
@@ -34,6 +37,7 @@ const MESSAGES = {
     providers: "Providers: {value}",
     todoItems: "Todo items: {value}",
     diffFiles: "Diff files: {value}",
+    childSessions: "Child sessions: {value}",
     statusTitle: "telegram-opencode status",
     topicHelpTitle: "telegram-opencode topic help",
     generalHelpTitle: "telegram-opencode general help",
@@ -51,9 +55,12 @@ const MESSAGES = {
     topicUnlinked: "Topic unlinked from the OpenCode session.",
     linkUsage: "Usage: /link <session-id>",
     sessionUsage: "Usage: /session <session-id>",
+    renameUsage: "Usage: /rename <new title>",
     linkedTopicToSession: "Linked this topic to session {sessionId}.",
     abortRequested: "Abort requested for session {sessionId}.",
     archivedSession: "Archived session {sessionId}.",
+    deletedSession: "Deleted session {sessionId}.",
+    renamedSession: "Session renamed to: {title}",
     sessionShared: "Session shared.",
     shareUrl: "Share URL: {url}",
     nothingToForward: "Nothing to forward from this message.",
@@ -73,6 +80,10 @@ const MESSAGES = {
     helpTopicFork: "/fork - fork the current OpenCode session into a new topic",
     helpTopicShare: "/share - generate a share link for the current session",
     helpTopicArchive: "/archive - archive the current session",
+    helpTopicRename: "/rename <new title> - rename the current session",
+    helpTopicChildren: "/children - list child sessions created from this one",
+    helpTopicDelete: "/delete - delete the current session and unlink this topic",
+    helpTopicDownload: "/download - export the recent session transcript as a file",
     helpTopicLink: "/link <session-id> - link this topic to an existing OpenCode session",
     helpTopicUnlink: "/unlink - remove the current topic/session mapping",
     helpTopicHelp: "/help - show this help message",
@@ -99,6 +110,10 @@ for (const locale of ["pt-BR", "es", "fr", "ru", "zh", "de"]) {
 
 MESSAGES["pt-BR"] = {
   ...MESSAGES.en,
+  untitledSession: "Sessao sem titulo",
+  unknownFolder: "pasta-desconhecida",
+  unknownProject: "Projeto sem nome",
+  unknownValue: "desconhecido",
   finishedStep: "OpenCode terminou uma etapa.",
   statusTitle: "status do telegram-opencode",
   topicHelpTitle: "ajuda do topic do telegram-opencode",
@@ -129,7 +144,17 @@ MESSAGES["pt-BR"] = {
   noProviders: "Nenhum provider configurado.",
   noTodos: "Nenhum item de todo para esta sessao.",
   noDiff: "Nenhum diff para esta sessao.",
-  openCodeSessionsSummary: "Sessoes OpenCode: {value}"
+  noChildSessions: "Nenhuma sessao filha encontrada.",
+  noTranscriptContent: "Nenhum conteudo de transcricao encontrado para esta sessao.",
+  openCodeSessionsSummary: "Sessoes OpenCode: {value}",
+  childSessions: "Sessoes filhas: {value}",
+  renameUsage: "Uso: /rename <novo titulo>",
+  deletedSession: "Sessao {sessionId} removida.",
+  renamedSession: "Sessao renomeada para: {title}",
+  helpTopicRename: "/rename <novo titulo> - renomeia a sessao atual",
+  helpTopicChildren: "/children - lista sessoes filhas criadas a partir desta",
+  helpTopicDelete: "/delete - remove a sessao atual e desvincula este topic",
+  helpTopicDownload: "/download - exporta a transcricao recente da sessao como arquivo"
 };
 
 MESSAGES.es = {
@@ -144,6 +169,8 @@ MESSAGES.es = {
   noTodos: "No hay tareas para esta sesion.",
   noDiff: "No hay cambios para esta sesion.",
   noLiveStatus: "Sesiones de OpenCode: sin estado en vivo",
+  noChildSessions: "No se encontraron sesiones hijas.",
+  noTranscriptContent: "No se encontro contenido de transcripcion para esta sesion.",
   finishedStep: "OpenCode termino un paso.",
   project: "Proyecto: {value}",
   projectId: "ID del proyecto: {value}",
@@ -167,6 +194,7 @@ MESSAGES.es = {
   providers: "Proveedores: {value}",
   todoItems: "Tareas: {value}",
   diffFiles: "Archivos con cambios: {value}",
+  childSessions: "Sesiones hijas: {value}",
   statusTitle: "estado de telegram-opencode",
   topicHelpTitle: "ayuda del topic de telegram-opencode",
   generalHelpTitle: "ayuda general de telegram-opencode",
@@ -184,9 +212,12 @@ MESSAGES.es = {
   topicUnlinked: "Topic desvinculado de la sesion de OpenCode.",
   linkUsage: "Uso: /link <session-id>",
   sessionUsage: "Uso: /session <session-id>",
+  renameUsage: "Uso: /rename <nuevo titulo>",
   linkedTopicToSession: "Este topic se vinculo a la sesion {sessionId}.",
   abortRequested: "Se solicito abortar la sesion {sessionId}.",
   archivedSession: "Sesion {sessionId} archivada.",
+  deletedSession: "Sesion {sessionId} eliminada.",
+  renamedSession: "Sesion renombrada a: {title}",
   sessionShared: "Sesion compartida.",
   shareUrl: "URL compartida: {url}",
   nothingToForward: "No hay nada que reenviar en este mensaje.",
@@ -206,6 +237,10 @@ MESSAGES.es = {
   helpTopicFork: "/fork - deriva la sesion actual en un nuevo topic",
   helpTopicShare: "/share - genera un enlace compartido para la sesion actual",
   helpTopicArchive: "/archive - archiva la sesion actual",
+  helpTopicRename: "/rename <nuevo titulo> - cambia el titulo de la sesion actual",
+  helpTopicChildren: "/children - lista las sesiones hijas creadas desde esta",
+  helpTopicDelete: "/delete - elimina la sesion actual y desvincula este topic",
+  helpTopicDownload: "/download - exporta la transcripcion reciente de la sesion como archivo",
   helpTopicLink: "/link <session-id> - vincula este topic a una sesion existente",
   helpTopicUnlink: "/unlink - elimina el mapeo actual topic/sesion",
   helpTopicHelp: "/help - muestra este mensaje de ayuda",
@@ -285,7 +320,17 @@ MESSAGES.fr = {
   topicLinkedLine1: "Ce topic est lie a une session OpenCode.",
   topicLinkedLine2: "Envoyez ici des messages pour les transferer a OpenCode.",
   sessionLinkedShort: "Session liee.",
-  forkedSession: "Session derivee : {title}"
+  forkedSession: "Session derivee : {title}",
+  renameUsage: "Usage : /rename <nouveau titre>",
+  deletedSession: "Session {sessionId} supprimee.",
+  renamedSession: "Session renommee en : {title}",
+  noChildSessions: "Aucune session enfant trouvee.",
+  noTranscriptContent: "Aucun contenu de transcription trouve pour cette session.",
+  childSessions: "Sessions enfants : {value}",
+  helpTopicRename: "/rename <nouveau titre> - renommer la session courante",
+  helpTopicChildren: "/children - lister les sessions enfants creees depuis celle-ci",
+  helpTopicDelete: "/delete - supprimer la session courante et dissocier ce topic",
+  helpTopicDownload: "/download - exporter la transcription recente de la session dans un fichier"
 };
 
 MESSAGES.ru = {
@@ -344,7 +389,17 @@ MESSAGES.ru = {
   topicLinkedLine1: "Этот topic связан с сессией OpenCode.",
   topicLinkedLine2: "Отправляйте сюда сообщения, чтобы переслать их в OpenCode.",
   sessionLinkedShort: "Сессия связана.",
-  forkedSession: "Ответвленная сессия: {title}"
+  forkedSession: "Ответвленная сессия: {title}",
+  renameUsage: "Использование: /rename <новое название>",
+  deletedSession: "Сессия {sessionId} удалена.",
+  renamedSession: "Сессия переименована в: {title}",
+  noChildSessions: "Дочерние сессии не найдены.",
+  noTranscriptContent: "Для этой сессии не найдено содержимое расшифровки.",
+  childSessions: "Дочерние сессии: {value}",
+  helpTopicRename: "/rename <новое название> - переименовать текущую сессию",
+  helpTopicChildren: "/children - показать дочерние сессии, созданные из этой",
+  helpTopicDelete: "/delete - удалить текущую сессию и отвязать этот topic",
+  helpTopicDownload: "/download - экспортировать недавнюю расшифровку сессии в файл"
 };
 
 MESSAGES.zh = {
@@ -403,7 +458,17 @@ MESSAGES.zh = {
   topicLinkedLine1: "此主题已关联到一个 OpenCode 会话。",
   topicLinkedLine2: "在此发送普通消息即可转发到 OpenCode。",
   sessionLinkedShort: "会话已关联。",
-  forkedSession: "派生会话：{title}"
+  forkedSession: "派生会话：{title}",
+  renameUsage: "用法：/rename <新标题>",
+  deletedSession: "已删除会话 {sessionId}。",
+  renamedSession: "会话已重命名为：{title}",
+  noChildSessions: "未找到子会话。",
+  noTranscriptContent: "此会话没有可导出的转录内容。",
+  childSessions: "子会话：{value}",
+  helpTopicRename: "/rename <新标题> - 重命名当前会话",
+  helpTopicChildren: "/children - 列出从当前会话创建的子会话",
+  helpTopicDelete: "/delete - 删除当前会话并解除此主题关联",
+  helpTopicDownload: "/download - 将最近的会话转录导出为文件"
 };
 
 MESSAGES.de = {
@@ -462,7 +527,17 @@ MESSAGES.de = {
   topicLinkedLine1: "Dieses Topic ist mit einer OpenCode-Sitzung verknupft.",
   topicLinkedLine2: "Sende hier Nachrichten, um sie an OpenCode weiterzuleiten.",
   sessionLinkedShort: "Sitzung verknupft.",
-  forkedSession: "Abgeleitete Sitzung: {title}"
+  forkedSession: "Abgeleitete Sitzung: {title}",
+  renameUsage: "Verwendung: /rename <neuer Titel>",
+  deletedSession: "Sitzung {sessionId} geloescht.",
+  renamedSession: "Sitzung umbenannt in: {title}",
+  noChildSessions: "Keine untergeordneten Sitzungen gefunden.",
+  noTranscriptContent: "Kein Transkriptinhalt fuer diese Sitzung gefunden.",
+  childSessions: "Untergeordnete Sitzungen: {value}",
+  helpTopicRename: "/rename <neuer Titel> - die aktuelle Sitzung umbenennen",
+  helpTopicChildren: "/children - untergeordnete Sitzungen aus dieser Sitzung auflisten",
+  helpTopicDelete: "/delete - die aktuelle Sitzung loeschen und dieses Topic trennen",
+  helpTopicDownload: "/download - das aktuelle Sitzungsprotokoll als Datei exportieren"
 };
 
 export function createTranslator(locale) {
