@@ -25,13 +25,17 @@ describe("createTranslator", () => {
 
   it("keeps localized keys available in other locales", () => {
     const t = createTranslator("de");
-    expect(t("deletedSession", { sessionId: "ses_1" })).toBe("Sitzung ses_1 geloescht.");
+    expect(t("deletedSession", { sessionId: "ses_1" })).toBe(
+      "Sitzung ses_1 geloescht."
+    );
   });
 });
 
 describe("parseTelegramCommandText", () => {
   it("parses addressed mention commands", () => {
-    expect(parseTelegramCommandText("@demo_bot /newtopic test run", "demo_bot")).toEqual({
+    expect(
+      parseTelegramCommandText("@demo_bot /newtopic test run", "demo_bot")
+    ).toEqual({
       name: "newtopic",
       args: "test run",
       addressed: true,
@@ -47,7 +51,9 @@ describe("parseTelegramCommandText", () => {
   });
 
   it("rejects commands for a different bot", () => {
-    expect(parseTelegramCommandText("/status@other_bot", "demo_bot")).toBeNull();
+    expect(
+      parseTelegramCommandText("/status@other_bot", "demo_bot")
+    ).toBeNull();
   });
 
   it("parses plain slash commands as not addressed", () => {
@@ -61,30 +67,36 @@ describe("parseTelegramCommandText", () => {
 
 describe("shouldReplayMessage", () => {
   it("skips seen messages when replay is disabled", () => {
-    expect(shouldReplayMessage({
-      replayPastMessages: false,
-      bootstrapped: true,
-      seen: { a: 1 },
-      messageId: "a",
-    })).toBe(false);
+    expect(
+      shouldReplayMessage({
+        replayPastMessages: false,
+        bootstrapped: true,
+        seen: { a: 1 },
+        messageId: "a",
+      })
+    ).toBe(false);
   });
 
   it("allows unseen bootstrapped messages", () => {
-    expect(shouldReplayMessage({
-      replayPastMessages: false,
-      bootstrapped: true,
-      seen: {},
-      messageId: "a",
-    })).toBe(true);
+    expect(
+      shouldReplayMessage({
+        replayPastMessages: false,
+        bootstrapped: true,
+        seen: {},
+        messageId: "a",
+      })
+    ).toBe(true);
   });
 
   it("allows history replay before bootstrap when enabled", () => {
-    expect(shouldReplayMessage({
-      replayPastMessages: true,
-      bootstrapped: false,
-      seen: { a: 1 },
-      messageId: "a",
-    })).toBe(true);
+    expect(
+      shouldReplayMessage({
+        replayPastMessages: true,
+        bootstrapped: false,
+        seen: { a: 1 },
+        messageId: "a",
+      })
+    ).toBe(true);
   });
 });
 
@@ -111,10 +123,14 @@ describe("findMappingByThreadId", () => {
 
 describe("topicNameForSession", () => {
   it("builds a prefixed topic name", () => {
-    expect(topicNameForSession("ses_1234567890", "My Session", "Untitled session")).toBe("[ses_123...] My Session");
+    expect(
+      topicNameForSession("ses_1234567890", "My Session", "Untitled session")
+    ).toBe("[ses_123...] My Session");
   });
 
   it("falls back to untitled label", () => {
-    expect(topicNameForSession("ses_1", "", "Sessao sem titulo")).toBe("[ses_1] Sessao sem titulo");
+    expect(topicNameForSession("ses_1", "", "Sessao sem titulo")).toBe(
+      "[ses_1] Sessao sem titulo"
+    );
   });
 });

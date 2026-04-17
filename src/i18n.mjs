@@ -42,16 +42,20 @@ const MESSAGES = {
     topicHelpTitle: "telegram-opencode topic help",
     generalHelpTitle: "telegram-opencode general help",
     topicHelpIntro1: "This topic can be linked to one OpenCode session.",
-    topicHelpIntro2: "Plain messages in a linked topic are forwarded to OpenCode.",
-    topicHelpIntro3: "Photos, documents, audio, voice notes and videos are also forwarded.",
-    generalHelpIntro1: "Use the general chat to create and inspect OpenCode sessions.",
+    topicHelpIntro2:
+      "Plain messages in a linked topic are forwarded to OpenCode.",
+    topicHelpIntro3:
+      "Photos, documents, audio, voice notes and videos are also forwarded.",
+    generalHelpIntro1:
+      "Use the general chat to create and inspect OpenCode sessions.",
     generalHelpIntro2: "General-chat commands must explicitly mention the bot.",
     generalHelpIntro3: "Use forum topics to talk to a specific linked session.",
     commands: "Commands:",
     examples: "Examples:",
     unknownCommand: "Unknown command. Use /help.",
     topicNotLinked: "This topic is not linked to any OpenCode session.",
-    topicNotLinkedYet: "This topic is not linked yet. Use /link <session-id> or create one from general with /newtopic.",
+    topicNotLinkedYet:
+      "This topic is not linked yet. Use /link <session-id> or create one from general with /newtopic.",
     topicUnlinked: "Topic unlinked from the OpenCode session.",
     linkUsage: "Usage: /link <session-id>",
     sessionUsage: "Usage: /session <session-id>",
@@ -72,7 +76,8 @@ const MESSAGES = {
     topicLinkedLine2: "Send plain messages here to forward them into OpenCode.",
     sessionLinkedShort: "Session linked.",
     forkedSession: "Forked session: {title}",
-    attachmentSkipped: "Attachment skipped because it exceeds {limit} bytes: {filename}",
+    attachmentSkipped:
+      "Attachment skipped because it exceeds {limit} bytes: {filename}",
     helpTopicStatus: "/status - show the linked session for this topic",
     helpTopicTodo: "/todo - show the OpenCode todo list for this session",
     helpTopicDiff: "/diff - show the current diff summary for this session",
@@ -82,26 +87,37 @@ const MESSAGES = {
     helpTopicArchive: "/archive - archive the current session",
     helpTopicRename: "/rename <new title> - rename the current session",
     helpTopicChildren: "/children - list child sessions created from this one",
-    helpTopicDelete: "/delete - delete the current session and unlink this topic",
-    helpTopicDownload: "/download - export the recent session transcript as a file",
-    helpTopicLink: "/link <session-id> - link this topic to an existing OpenCode session",
+    helpTopicDelete:
+      "/delete - delete the current session and unlink this topic",
+    helpTopicDownload:
+      "/download - export the recent session transcript as a file",
+    helpTopicLink:
+      "/link <session-id> - link this topic to an existing OpenCode session",
     helpTopicUnlink: "/unlink - remove the current topic/session mapping",
     helpTopicHelp: "/help - show this help message",
-    helpGeneralNewtopic: "{mention} /newtopic <title> - create a new OpenCode session and matching Telegram topic",
-    helpGeneralListtopics: "{mention} /listtopics - show saved topic/session mappings",
-    helpGeneralStatus: "{mention} /status - show bridge and OpenCode runtime status",
-    helpGeneralSessions: "{mention} /sessions [limit] - list recent OpenCode sessions",
-    helpGeneralSession: "{mention} /session <session-id> - inspect one OpenCode session",
-    helpGeneralProject: "{mention} /project - show the current OpenCode project",
-    helpGeneralProjects: "{mention} /projects [limit] - list known OpenCode projects",
-    helpGeneralProviders: "{mention} /providers - list configured providers and defaults",
+    helpGeneralNewtopic:
+      "{mention} /newtopic <title> - create a new OpenCode session and matching Telegram topic",
+    helpGeneralListtopics:
+      "{mention} /listtopics - show saved topic/session mappings",
+    helpGeneralStatus:
+      "{mention} /status - show bridge and OpenCode runtime status",
+    helpGeneralSessions:
+      "{mention} /sessions [limit] - list recent OpenCode sessions",
+    helpGeneralSession:
+      "{mention} /session <session-id> - inspect one OpenCode session",
+    helpGeneralProject:
+      "{mention} /project - show the current OpenCode project",
+    helpGeneralProjects:
+      "{mention} /projects [limit] - list known OpenCode projects",
+    helpGeneralProviders:
+      "{mention} /providers - list configured providers and defaults",
     helpGeneralHelp: "{mention} /help - show this help message",
     helpExample1: "{mention} /newtopic investigate payment bug",
     helpExample2: "{mention} /newtopic summarize audit notes",
     lifecycle: "telegram-opencode {state}",
     openCodeBase: "OpenCode: {value}",
-    time: "Time: {value}"
-  }
+    time: "Time: {value}",
+  },
 };
 
 for (const locale of ["pt-BR", "es", "fr", "ru", "zh", "de"]) {
@@ -120,7 +136,8 @@ MESSAGES["pt-BR"] = {
   generalHelpTitle: "ajuda geral do telegram-opencode",
   unknownCommand: "Comando desconhecido. Use /help.",
   topicNotLinked: "Este topic nao esta vinculado a nenhuma sessao do OpenCode.",
-  topicNotLinkedYet: "Este topic ainda nao esta vinculado. Use /link <session-id> ou crie um no geral com /newtopic.",
+  topicNotLinkedYet:
+    "Este topic ainda nao esta vinculado. Use /link <session-id> ou crie um no geral com /newtopic.",
   topicUnlinked: "Topic desvinculado da sessao do OpenCode.",
   linkUsage: "Uso: /link <session-id>",
   sessionUsage: "Uso: /session <session-id>",
@@ -145,7 +162,8 @@ MESSAGES["pt-BR"] = {
   noTodos: "Nenhum item de todo para esta sessao.",
   noDiff: "Nenhum diff para esta sessao.",
   noChildSessions: "Nenhuma sessao filha encontrada.",
-  noTranscriptContent: "Nenhum conteudo de transcricao encontrado para esta sessao.",
+  noTranscriptContent:
+    "Nenhum conteudo de transcricao encontrado para esta sessao.",
   openCodeSessionsSummary: "Sessoes OpenCode: {value}",
   childSessions: "Sessoes filhas: {value}",
   renameUsage: "Uso: /rename <novo titulo>",
@@ -154,7 +172,8 @@ MESSAGES["pt-BR"] = {
   helpTopicRename: "/rename <novo titulo> - renomeia a sessao atual",
   helpTopicChildren: "/children - lista sessoes filhas criadas a partir desta",
   helpTopicDelete: "/delete - remove a sessao atual e desvincula este topic",
-  helpTopicDownload: "/download - exporta a transcricao recente da sessao como arquivo"
+  helpTopicDownload:
+    "/download - exporta a transcricao recente da sessao como arquivo",
 };
 
 MESSAGES.es = {
@@ -170,7 +189,8 @@ MESSAGES.es = {
   noDiff: "No hay cambios para esta sesion.",
   noLiveStatus: "Sesiones de OpenCode: sin estado en vivo",
   noChildSessions: "No se encontraron sesiones hijas.",
-  noTranscriptContent: "No se encontro contenido de transcripcion para esta sesion.",
+  noTranscriptContent:
+    "No se encontro contenido de transcripcion para esta sesion.",
   finishedStep: "OpenCode termino un paso.",
   project: "Proyecto: {value}",
   projectId: "ID del proyecto: {value}",
@@ -199,16 +219,22 @@ MESSAGES.es = {
   topicHelpTitle: "ayuda del topic de telegram-opencode",
   generalHelpTitle: "ayuda general de telegram-opencode",
   topicHelpIntro1: "Este topic puede vincularse a una sesion de OpenCode.",
-  topicHelpIntro2: "Los mensajes normales en un topic vinculado se envian a OpenCode.",
-  topicHelpIntro3: "Las fotos, documentos, audios, notas de voz y videos tambien se envian.",
-  generalHelpIntro1: "Usa el chat general para crear e inspeccionar sesiones de OpenCode.",
-  generalHelpIntro2: "Los comandos del chat general deben mencionar explicitamente al bot.",
-  generalHelpIntro3: "Usa los forum topics para hablar con una sesion vinculada.",
+  topicHelpIntro2:
+    "Los mensajes normales en un topic vinculado se envian a OpenCode.",
+  topicHelpIntro3:
+    "Las fotos, documentos, audios, notas de voz y videos tambien se envian.",
+  generalHelpIntro1:
+    "Usa el chat general para crear e inspeccionar sesiones de OpenCode.",
+  generalHelpIntro2:
+    "Los comandos del chat general deben mencionar explicitamente al bot.",
+  generalHelpIntro3:
+    "Usa los forum topics para hablar con una sesion vinculada.",
   commands: "Comandos:",
   examples: "Ejemplos:",
   unknownCommand: "Comando desconocido. Usa /help.",
   topicNotLinked: "Este topic no esta vinculado a ninguna sesion de OpenCode.",
-  topicNotLinkedYet: "Este topic aun no esta vinculado. Usa /link <session-id> o crea uno desde el general con /newtopic.",
+  topicNotLinkedYet:
+    "Este topic aun no esta vinculado. Usa /link <session-id> o crea uno desde el general con /newtopic.",
   topicUnlinked: "Topic desvinculado de la sesion de OpenCode.",
   linkUsage: "Uso: /link <session-id>",
   sessionUsage: "Uso: /session <session-id>",
@@ -237,25 +263,36 @@ MESSAGES.es = {
   helpTopicFork: "/fork - deriva la sesion actual en un nuevo topic",
   helpTopicShare: "/share - genera un enlace compartido para la sesion actual",
   helpTopicArchive: "/archive - archiva la sesion actual",
-  helpTopicRename: "/rename <nuevo titulo> - cambia el titulo de la sesion actual",
+  helpTopicRename:
+    "/rename <nuevo titulo> - cambia el titulo de la sesion actual",
   helpTopicChildren: "/children - lista las sesiones hijas creadas desde esta",
   helpTopicDelete: "/delete - elimina la sesion actual y desvincula este topic",
-  helpTopicDownload: "/download - exporta la transcripcion reciente de la sesion como archivo",
-  helpTopicLink: "/link <session-id> - vincula este topic a una sesion existente",
+  helpTopicDownload:
+    "/download - exporta la transcripcion reciente de la sesion como archivo",
+  helpTopicLink:
+    "/link <session-id> - vincula este topic a una sesion existente",
   helpTopicUnlink: "/unlink - elimina el mapeo actual topic/sesion",
   helpTopicHelp: "/help - muestra este mensaje de ayuda",
-  helpGeneralNewtopic: "{mention} /newtopic <titulo> - crea una nueva sesion de OpenCode y su topic de Telegram",
-  helpGeneralListtopics: "{mention} /listtopics - muestra los mapeos guardados de topic/sesion",
-  helpGeneralStatus: "{mention} /status - muestra el estado del bridge y de OpenCode",
-  helpGeneralSessions: "{mention} /sessions [limit] - lista sesiones recientes de OpenCode",
-  helpGeneralSession: "{mention} /session <session-id> - inspecciona una sesion de OpenCode",
-  helpGeneralProject: "{mention} /project - muestra el proyecto actual de OpenCode",
-  helpGeneralProjects: "{mention} /projects [limit] - lista proyectos conocidos de OpenCode",
-  helpGeneralProviders: "{mention} /providers - lista proveedores configurados y valores por defecto",
+  helpGeneralNewtopic:
+    "{mention} /newtopic <titulo> - crea una nueva sesion de OpenCode y su topic de Telegram",
+  helpGeneralListtopics:
+    "{mention} /listtopics - muestra los mapeos guardados de topic/sesion",
+  helpGeneralStatus:
+    "{mention} /status - muestra el estado del bridge y de OpenCode",
+  helpGeneralSessions:
+    "{mention} /sessions [limit] - lista sesiones recientes de OpenCode",
+  helpGeneralSession:
+    "{mention} /session <session-id> - inspecciona una sesion de OpenCode",
+  helpGeneralProject:
+    "{mention} /project - muestra el proyecto actual de OpenCode",
+  helpGeneralProjects:
+    "{mention} /projects [limit] - lista proyectos conocidos de OpenCode",
+  helpGeneralProviders:
+    "{mention} /providers - lista proveedores configurados y valores por defecto",
   helpGeneralHelp: "{mention} /help - muestra este mensaje de ayuda",
   lifecycle: "telegram-opencode {state}",
   openCodeBase: "OpenCode: {value}",
-  time: "Hora: {value}"
+  time: "Hora: {value}",
 };
 
 MESSAGES.fr = {
@@ -294,16 +331,22 @@ MESSAGES.fr = {
   topicHelpTitle: "aide du topic telegram-opencode",
   generalHelpTitle: "aide generale de telegram-opencode",
   topicHelpIntro1: "Ce topic peut etre lie a une session OpenCode.",
-  topicHelpIntro2: "Les messages normaux dans un topic lie sont transferes vers OpenCode.",
-  topicHelpIntro3: "Les photos, documents, audios, notes vocales et videos sont egalement transferes.",
-  generalHelpIntro1: "Utilisez le chat general pour creer et inspecter des sessions OpenCode.",
-  generalHelpIntro2: "Les commandes du chat general doivent mentionner explicitement le bot.",
-  generalHelpIntro3: "Utilisez les forum topics pour parler a une session liee.",
+  topicHelpIntro2:
+    "Les messages normaux dans un topic lie sont transferes vers OpenCode.",
+  topicHelpIntro3:
+    "Les photos, documents, audios, notes vocales et videos sont egalement transferes.",
+  generalHelpIntro1:
+    "Utilisez le chat general pour creer et inspecter des sessions OpenCode.",
+  generalHelpIntro2:
+    "Les commandes du chat general doivent mentionner explicitement le bot.",
+  generalHelpIntro3:
+    "Utilisez les forum topics pour parler a une session liee.",
   commands: "Commandes :",
   examples: "Exemples :",
   unknownCommand: "Commande inconnue. Utilisez /help.",
   topicNotLinked: "Ce topic n'est lie a aucune session OpenCode.",
-  topicNotLinkedYet: "Ce topic n'est pas encore lie. Utilisez /link <session-id> ou creez-en un depuis le general avec /newtopic.",
+  topicNotLinkedYet:
+    "Ce topic n'est pas encore lie. Utilisez /link <session-id> ou creez-en un depuis le general avec /newtopic.",
   topicUnlinked: "Topic dissocie de la session OpenCode.",
   linkUsage: "Usage : /link <session-id>",
   sessionUsage: "Usage : /session <session-id>",
@@ -325,12 +368,16 @@ MESSAGES.fr = {
   deletedSession: "Session {sessionId} supprimee.",
   renamedSession: "Session renommee en : {title}",
   noChildSessions: "Aucune session enfant trouvee.",
-  noTranscriptContent: "Aucun contenu de transcription trouve pour cette session.",
+  noTranscriptContent:
+    "Aucun contenu de transcription trouve pour cette session.",
   childSessions: "Sessions enfants : {value}",
   helpTopicRename: "/rename <nouveau titre> - renommer la session courante",
-  helpTopicChildren: "/children - lister les sessions enfants creees depuis celle-ci",
-  helpTopicDelete: "/delete - supprimer la session courante et dissocier ce topic",
-  helpTopicDownload: "/download - exporter la transcription recente de la session dans un fichier"
+  helpTopicChildren:
+    "/children - lister les sessions enfants creees depuis celle-ci",
+  helpTopicDelete:
+    "/delete - supprimer la session courante et dissocier ce topic",
+  helpTopicDownload:
+    "/download - exporter la transcription recente de la session dans un fichier",
 };
 
 MESSAGES.ru = {
@@ -372,7 +419,8 @@ MESSAGES.ru = {
   examples: "Примеры:",
   unknownCommand: "Неизвестная команда. Используйте /help.",
   topicNotLinked: "Этот topic не связан ни с одной сессией OpenCode.",
-  topicNotLinkedYet: "Этот topic еще не связан. Используйте /link <session-id> или создайте новый через /newtopic в общем чате.",
+  topicNotLinkedYet:
+    "Этот topic еще не связан. Используйте /link <session-id> или создайте новый через /newtopic в общем чате.",
   topicUnlinked: "Topic отвязан от сессии OpenCode.",
   linkUsage: "Использование: /link <session-id>",
   sessionUsage: "Использование: /session <session-id>",
@@ -387,7 +435,8 @@ MESSAGES.ru = {
   topicCreated: "Создан topic: {name}",
   postedToGeneral: "Отправлено в общий чат",
   topicLinkedLine1: "Этот topic связан с сессией OpenCode.",
-  topicLinkedLine2: "Отправляйте сюда сообщения, чтобы переслать их в OpenCode.",
+  topicLinkedLine2:
+    "Отправляйте сюда сообщения, чтобы переслать их в OpenCode.",
   sessionLinkedShort: "Сессия связана.",
   forkedSession: "Ответвленная сессия: {title}",
   renameUsage: "Использование: /rename <новое название>",
@@ -399,7 +448,8 @@ MESSAGES.ru = {
   helpTopicRename: "/rename <новое название> - переименовать текущую сессию",
   helpTopicChildren: "/children - показать дочерние сессии, созданные из этой",
   helpTopicDelete: "/delete - удалить текущую сессию и отвязать этот topic",
-  helpTopicDownload: "/download - экспортировать недавнюю расшифровку сессии в файл"
+  helpTopicDownload:
+    "/download - экспортировать недавнюю расшифровку сессии в файл",
 };
 
 MESSAGES.zh = {
@@ -441,7 +491,8 @@ MESSAGES.zh = {
   examples: "示例：",
   unknownCommand: "未知命令。请使用 /help。",
   topicNotLinked: "此主题未关联任何 OpenCode 会话。",
-  topicNotLinkedYet: "此主题尚未关联。请使用 /link <session-id>，或在总群中通过 /newtopic 创建。",
+  topicNotLinkedYet:
+    "此主题尚未关联。请使用 /link <session-id>，或在总群中通过 /newtopic 创建。",
   topicUnlinked: "主题已从 OpenCode 会话解除关联。",
   linkUsage: "用法：/link <session-id>",
   sessionUsage: "用法：/session <session-id>",
@@ -468,7 +519,7 @@ MESSAGES.zh = {
   helpTopicRename: "/rename <新标题> - 重命名当前会话",
   helpTopicChildren: "/children - 列出从当前会话创建的子会话",
   helpTopicDelete: "/delete - 删除当前会话并解除此主题关联",
-  helpTopicDownload: "/download - 将最近的会话转录导出为文件"
+  helpTopicDownload: "/download - 将最近的会话转录导出为文件",
 };
 
 MESSAGES.de = {
@@ -510,11 +561,13 @@ MESSAGES.de = {
   examples: "Beispiele:",
   unknownCommand: "Unbekannter Befehl. Verwende /help.",
   topicNotLinked: "Dieses Topic ist mit keiner OpenCode-Sitzung verknupft.",
-  topicNotLinkedYet: "Dieses Topic ist noch nicht verknupft. Verwende /link <session-id> oder erstelle eines im allgemeinen Chat mit /newtopic.",
+  topicNotLinkedYet:
+    "Dieses Topic ist noch nicht verknupft. Verwende /link <session-id> oder erstelle eines im allgemeinen Chat mit /newtopic.",
   topicUnlinked: "Topic von der OpenCode-Sitzung getrennt.",
   linkUsage: "Verwendung: /link <session-id>",
   sessionUsage: "Verwendung: /session <session-id>",
-  linkedTopicToSession: "Dieses Topic wurde mit der Sitzung {sessionId} verknupft.",
+  linkedTopicToSession:
+    "Dieses Topic wurde mit der Sitzung {sessionId} verknupft.",
   abortRequested: "Abbruch fur Sitzung {sessionId} angefordert.",
   archivedSession: "Sitzung {sessionId} archiviert.",
   sessionShared: "Sitzung freigegeben.",
@@ -525,7 +578,8 @@ MESSAGES.de = {
   topicCreated: "Topic erstellt: {name}",
   postedToGeneral: "Im allgemeinen Chat gepostet",
   topicLinkedLine1: "Dieses Topic ist mit einer OpenCode-Sitzung verknupft.",
-  topicLinkedLine2: "Sende hier Nachrichten, um sie an OpenCode weiterzuleiten.",
+  topicLinkedLine2:
+    "Sende hier Nachrichten, um sie an OpenCode weiterzuleiten.",
   sessionLinkedShort: "Sitzung verknupft.",
   forkedSession: "Abgeleitete Sitzung: {title}",
   renameUsage: "Verwendung: /rename <neuer Titel>",
@@ -535,9 +589,12 @@ MESSAGES.de = {
   noTranscriptContent: "Kein Transkriptinhalt fuer diese Sitzung gefunden.",
   childSessions: "Untergeordnete Sitzungen: {value}",
   helpTopicRename: "/rename <neuer Titel> - die aktuelle Sitzung umbenennen",
-  helpTopicChildren: "/children - untergeordnete Sitzungen aus dieser Sitzung auflisten",
-  helpTopicDelete: "/delete - die aktuelle Sitzung loeschen und dieses Topic trennen",
-  helpTopicDownload: "/download - das aktuelle Sitzungsprotokoll als Datei exportieren"
+  helpTopicChildren:
+    "/children - untergeordnete Sitzungen aus dieser Sitzung auflisten",
+  helpTopicDelete:
+    "/delete - die aktuelle Sitzung loeschen und dieses Topic trennen",
+  helpTopicDownload:
+    "/download - das aktuelle Sitzungsprotokoll als Datei exportieren",
 };
 
 export function createTranslator(locale) {
@@ -546,7 +603,9 @@ export function createTranslator(locale) {
 
   return function t(key, vars = {}) {
     const template = dict[key] || MESSAGES.en[key] || key;
-    return String(template).replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? `{${name}}`));
+    return String(template).replace(/\{(\w+)\}/g, (_, name) =>
+      String(vars[name] ?? `{${name}}`)
+    );
   };
 }
 
@@ -554,7 +613,8 @@ function normalizeLocale(locale) {
   const value = String(locale || "en").trim();
   if (!value) return "en";
   const lowered = value.toLowerCase();
-  if (lowered === "pt-br" || lowered === "pt_br" || lowered === "pt") return "pt-BR";
+  if (lowered === "pt-br" || lowered === "pt_br" || lowered === "pt")
+    return "pt-BR";
   if (lowered.startsWith("es")) return "es";
   if (lowered.startsWith("fr")) return "fr";
   if (lowered.startsWith("ru")) return "ru";

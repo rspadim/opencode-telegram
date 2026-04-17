@@ -16,7 +16,10 @@ export type TelegramCommand = {
   addressed: boolean;
 };
 
-export function parseTelegramCommandText(text: string, botUsername?: string): TelegramCommand | null {
+export function parseTelegramCommandText(
+  text: string,
+  botUsername?: string
+): TelegramCommand | null {
   const username = String(botUsername || "").trim();
   const original = text.trim();
   let normalized = original;
@@ -70,7 +73,10 @@ export function shouldReplayMessage(options: {
   return true;
 }
 
-export function findMappingByThreadId(threadId: number, topicMap: TopicMap): MappedThread | null {
+export function findMappingByThreadId(
+  threadId: number,
+  topicMap: TopicMap
+): MappedThread | null {
   for (const [sessionId, value] of Object.entries(topicMap)) {
     if (Number(value?.threadId) === Number(threadId)) {
       return {
@@ -83,7 +89,11 @@ export function findMappingByThreadId(threadId: number, topicMap: TopicMap): Map
   return null;
 }
 
-export function topicNameForSession(sessionId: string | undefined, title: string | undefined, untitledSession: string): string {
+export function topicNameForSession(
+  sessionId: string | undefined,
+  title: string | undefined,
+  untitledSession: string
+): string {
   const shortId = truncate(String(sessionId || "session").trim(), 10);
   const clean = String(title || untitledSession)
     .replace(/\s+/g, " ")

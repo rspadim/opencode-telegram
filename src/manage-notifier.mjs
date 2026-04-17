@@ -56,8 +56,8 @@ async function printStatus() {
         lockFile: LOCK_PATH,
       },
       null,
-      2,
-    ),
+      2
+    )
   );
 }
 

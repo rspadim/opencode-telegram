@@ -8,14 +8,23 @@
     "stop": "node manage-notifier.mjs stop",
     "status": "node manage-notifier.mjs status",
     "check": "node --check telegram-notifier.mjs && node --check manage-notifier.mjs && tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "tray:windows": "powershell -ExecutionPolicy Bypass -File .\\tray-telegram-notifier.ps1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.6.0",
+    "eslint": "^10.2.0",
+    "globals": "^17.5.0",
+    "prettier": "^3.8.3",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.58.2",
     "vitest": "^3.2.4"
   }
 }

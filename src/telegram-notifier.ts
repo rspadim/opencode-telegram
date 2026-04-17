@@ -111,11 +111,38 @@ type TelegramMessage = {
     last_name?: string;
     username?: string;
   };
-  photo?: Array<{ file_id: string; file_size?: number; file_unique_id?: string }>;
-  document?: { file_id?: string; file_size?: number; mime_type?: string; file_name?: string; file_unique_id?: string };
-  audio?: { file_id?: string; file_size?: number; mime_type?: string; file_name?: string; file_unique_id?: string };
-  voice?: { file_id?: string; file_size?: number; mime_type?: string; file_unique_id?: string };
-  video?: { file_id?: string; file_size?: number; mime_type?: string; file_name?: string; file_unique_id?: string };
+  photo?: Array<{
+    file_id: string;
+    file_size?: number;
+    file_unique_id?: string;
+  }>;
+  document?: {
+    file_id?: string;
+    file_size?: number;
+    mime_type?: string;
+    file_name?: string;
+    file_unique_id?: string;
+  };
+  audio?: {
+    file_id?: string;
+    file_size?: number;
+    mime_type?: string;
+    file_name?: string;
+    file_unique_id?: string;
+  };
+  voice?: {
+    file_id?: string;
+    file_size?: number;
+    mime_type?: string;
+    file_unique_id?: string;
+  };
+  video?: {
+    file_id?: string;
+    file_size?: number;
+    mime_type?: string;
+    file_name?: string;
+    file_unique_id?: string;
+  };
 };
 
 type TelegramUpdate = {
@@ -156,6 +183,32 @@ type AttachmentExtraction = {
   notes: string[];
 };
 
+type SessionStatusMap = Record<string, { type?: string }>;
+
+type ProviderConfigResponse = {
+  providers?: Array<{
+    id: string;
+    models?: Record<string, unknown>;
+  }>;
+  default?: Record<string, string>;
+};
+
+type TodoItem = {
+  status?: string;
+  content?: string;
+};
+
+type DiffEntry = {
+  path?: string;
+  file?: string;
+};
+
+type SharedSessionResponse = {
+  share?: {
+    url?: string;
+  };
+};
+
 type MappedThread = TopicMapping & { sessionId: string };
 
 type TelegramBotIdentity = {
@@ -172,30 +225,77 @@ const PROJECT_ROOT = path.resolve(__dirname, "..");
 const CONFIG_PATH = path.join(PROJECT_ROOT, "config.local.json");
 const PATH_DELIMITER = path.delimiter;
 const NPM_BIN = path.join(
-  process.env.APPDATA || path.join(process.env.USERPROFILE || "C:\\Users\\rober", "AppData", "Roaming"),
-  "npm",
+  process.env.APPDATA ||
+    path.join(
+      process.env.USERPROFILE || "C:\\Users\\rober",
+      "AppData",
+      "Roaming"
+    ),
+  "npm"
 );
 const OPENCODE_BIN = process.env.OPENCODE_BIN || defaultOpencodeBin();
 const ENABLE_DESKTOP_NOTIFY = ["1", "true", "yes", "on"].includes(
-  String(process.env.OPENCODE_DESKTOP_NOTIFY || "").toLowerCase(),
+  String(process.env.OPENCODE_DESKTOP_NOTIFY || "").toLowerCase()
 );
 
-if (process.platform === "win32" && !String(process.env.PATH || "").toLowerCase().includes(NPM_BIN.toLowerCase())) {
+if (
+  process.platform === "win32" &&
+  !String(process.env.PATH || "")
+    .toLowerCase()
+    .includes(NPM_BIN.toLowerCase())
+) {
   process.env.PATH = `${NPM_BIN}${PATH_DELIMITER}${process.env.PATH || ""}`;
 }
 
 const config: LocalConfig = await loadLocalConfig();
 const LOCALE = config.locale || process.env.OPENCODE_LOCALE || "en";
 const t = createTranslator(LOCALE);
-const BOT_TOKEN = process.env.OPENCODE_TELEGRAM_BOT_TOKEN || config.telegram?.botToken;
-const CHAT_ID = process.env.OPENCODE_TELEGRAM_CHAT_ID || config.telegram?.chatId;
-const BASE_URL = process.env.OPENCODE_BASE_URL || config.opencode?.baseUrl || "http://127.0.0.1:4096";
-const POLL_MS = clamp(Number(process.env.OPENCODE_TELEGRAM_POLL_MS || config.runtime?.pollMs || 5000), 2000, 60000);
-const SESSION_LIMIT = clamp(Number(process.env.OPENCODE_TELEGRAM_SESSION_LIMIT || config.runtime?.sessionLimit || 25), 1, 100);
-const MESSAGE_LIMIT = clamp(Number(process.env.OPENCODE_TELEGRAM_MESSAGE_LIMIT || config.runtime?.messageLimit || 20), 1, 100);
-const ATTACHMENT_SIZE_LIMIT = clamp(Number(process.env.OPENCODE_ATTACHMENT_SIZE_LIMIT || config.runtime?.attachmentSizeLimit || 10000000), 1000000, 50000000);
+const BOT_TOKEN =
+  process.env.OPENCODE_TELEGRAM_BOT_TOKEN || config.telegram?.botToken;
+const CHAT_ID =
+  process.env.OPENCODE_TELEGRAM_CHAT_ID || config.telegram?.chatId;
+const BASE_URL =
+  process.env.OPENCODE_BASE_URL ||
+  config.opencode?.baseUrl ||
+  "http://127.0.0.1:4096";
+const POLL_MS = clamp(
+  Number(
+    process.env.OPENCODE_TELEGRAM_POLL_MS || config.runtime?.pollMs || 5000
+  ),
+  2000,
+  60000
+);
+const SESSION_LIMIT = clamp(
+  Number(
+    process.env.OPENCODE_TELEGRAM_SESSION_LIMIT ||
+      config.runtime?.sessionLimit ||
+      25
+  ),
+  1,
+  100
+);
+const MESSAGE_LIMIT = clamp(
+  Number(
+    process.env.OPENCODE_TELEGRAM_MESSAGE_LIMIT ||
+      config.runtime?.messageLimit ||
+      20
+  ),
+  1,
+  100
+);
+const ATTACHMENT_SIZE_LIMIT = clamp(
+  Number(
+    process.env.OPENCODE_ATTACHMENT_SIZE_LIMIT ||
+      config.runtime?.attachmentSizeLimit ||
+      10000000
+  ),
+  1000000,
+  50000000
+);
 const REPLAY_PAST_MESSAGES = [true, "true", 1, "1", "yes", "on"].includes(
-  process.env.OPENCODE_REPLAY_PAST_MESSAGES ?? config.runtime?.replayPastMessages ?? false,
+  process.env.OPENCODE_REPLAY_PAST_MESSAGES ??
+    config.runtime?.replayPastMessages ??
+    false
 );
 const DATA_DIR = path.join(PROJECT_ROOT, "data");
 const STATE_PATH = path.join(DATA_DIR, "telegram-notifier.state.json");
@@ -205,7 +305,9 @@ const TOPIC_MAP_PATH = path.join(DATA_DIR, "telegram-topic-map.json");
 const LOG_PATH = path.join(DATA_DIR, "telegram-notifier.log");
 
 if (!BOT_TOKEN || !CHAT_ID) {
-  console.error("Missing OPENCODE_TELEGRAM_BOT_TOKEN or OPENCODE_TELEGRAM_CHAT_ID.");
+  console.error(
+    "Missing OPENCODE_TELEGRAM_BOT_TOKEN or OPENCODE_TELEGRAM_CHAT_ID."
+  );
   process.exit(1);
 }
 
@@ -239,13 +341,11 @@ while (!shuttingDown) {
 }
 
 async function ensureServer(): Promise<string> {
-  let health: Nullable<{ healthy?: boolean } | { ok: false; status: number }> = null;
-
-  try {
-    health = await fetchJson(`${BASE_URL}/global/health`, { allowFailure: true });
-  } catch {
-    health = null;
-  }
+  const health: Nullable<
+    { healthy?: boolean } | { ok: false; status: number }
+  > = await fetchJson(`${BASE_URL}/global/health`, {
+    allowFailure: true,
+  }).catch(() => null);
 
   if (health && "healthy" in health && health.healthy) {
     return BASE_URL;
@@ -271,7 +371,9 @@ async function loadLocalConfig(): Promise<LocalConfig> {
 }
 
 async function scanOnce(baseUrl: string): Promise<void> {
-  const sessions = await fetchJson<SessionRecord[]>(`${baseUrl}/session?limit=${SESSION_LIMIT}`);
+  const sessions = await fetchJson<SessionRecord[]>(
+    `${baseUrl}/session?limit=${SESSION_LIMIT}`
+  );
   if (!Array.isArray(sessions)) {
     throw new Error("Unexpected /session response.");
   }
@@ -279,9 +381,9 @@ async function scanOnce(baseUrl: string): Promise<void> {
   const notifications: NotificationItem[] = [];
 
   for (const session of sessions) {
-      const messages = await fetchJson<SessionMessage[]>(
-        `${baseUrl}/session/${encodeURIComponent(session.id)}/message?limit=${MESSAGE_LIMIT}`,
-      );
+    const messages = await fetchJson<SessionMessage[]>(
+      `${baseUrl}/session/${encodeURIComponent(session.id)}/message?limit=${MESSAGE_LIMIT}`
+    );
 
     if (!Array.isArray(messages)) {
       continue;
@@ -291,13 +393,19 @@ async function scanOnce(baseUrl: string): Promise<void> {
       .filter((entry) => entry?.info?.role === "assistant")
       .filter((entry) => entry?.info?.time?.completed)
       .filter((entry) => !entry?.info?.summary)
-      .sort((a, b) => Number(a.info.time.completed) - Number(b.info.time.completed));
+      .sort(
+        (a, b) => Number(a.info.time.completed) - Number(b.info.time.completed)
+      );
 
     for (const entry of completedAssistantMessages) {
       const messageId = entry.info.id;
       const completedAt = Number(entry.info.time.completed);
 
-      if (!messageId || !completedAt || (!REPLAY_PAST_MESSAGES && state.seen[messageId])) {
+      if (
+        !messageId ||
+        !completedAt ||
+        (!REPLAY_PAST_MESSAGES && state.seen[messageId])
+      ) {
         continue;
       }
 
@@ -346,7 +454,9 @@ async function scanOnce(baseUrl: string): Promise<void> {
     pruneSeen();
     await saveState();
     await saveTopicMap();
-    console.log(`telegram-notifier sent ${notifications.length} notification(s)`);
+    console.log(
+      `telegram-notifier sent ${notifications.length} notification(s)`
+    );
   }
 }
 
@@ -367,7 +477,9 @@ function extractText(parts: MessagePart[]): string {
 }
 
 function formatTelegramMessage(item: NotificationItem): string {
-  const folder = item.directory ? path.basename(item.directory) : t("unknownFolder");
+  const folder = item.directory
+    ? path.basename(item.directory)
+    : t("unknownFolder");
   return [
     t("finishedStep"),
     t("project", { value: folder }),
@@ -381,7 +493,10 @@ function formatTopicTelegramMessage(item: NotificationItem): string {
   return item.text;
 }
 
-async function sendTelegram(text: string, item?: NotificationItem): Promise<void> {
+async function sendTelegram(
+  text: string,
+  item?: NotificationItem
+): Promise<void> {
   const payload: TelegramSendPayload = {
     chat_id: CHAT_ID,
     text,
@@ -396,16 +511,21 @@ async function sendTelegram(text: string, item?: NotificationItem): Promise<void
     payload.message_thread_id = threadId;
   }
 
-  const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(
+    `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(`Telegram request failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Telegram request failed: ${response.status} ${response.statusText}`
+    );
   }
 
   const data = await response.json();
@@ -417,10 +537,21 @@ async function sendTelegram(text: string, item?: NotificationItem): Promise<void
     threadId: payload.message_thread_id || null,
     text: truncate(text, 200),
   });
-  await maybeNotifyDesktop(arguments[1]);
+  await maybeNotifyDesktop(item);
 }
 
-async function fetchJson<T = any>(url: string, options: FetchJsonOptions = {}): Promise<T | { ok: false; status: number }> {
+async function fetchJson<T = Record<string, unknown>>(
+  url: string,
+  options: FetchJsonOptions & { allowFailure: true }
+): Promise<T | { ok: false; status: number }>;
+async function fetchJson<T = Record<string, unknown>>(
+  url: string,
+  options?: FetchJsonOptions
+): Promise<T>;
+async function fetchJson<T = Record<string, unknown>>(
+  url: string,
+  options: FetchJsonOptions = {}
+): Promise<T | { ok: false; status: number }> {
   const response = await fetch(url, {
     headers: {
       accept: "application/json",
@@ -431,20 +562,28 @@ async function fetchJson<T = any>(url: string, options: FetchJsonOptions = {}): 
     if (options.allowFailure) {
       return { ok: false, status: response.status };
     }
-    throw new Error(`Request failed: ${response.status} ${response.statusText} (${url})`);
+    throw new Error(
+      `Request failed: ${response.status} ${response.statusText} (${url})`
+    );
   }
 
   return response.json();
 }
 
-async function postJson<T = any>(url: string, body: unknown): Promise<T> {
+async function postJson<T = Record<string, unknown>>(
+  url: string,
+  body: unknown
+): Promise<T> {
   return requestJson(url, {
     method: "POST",
     body,
   });
 }
 
-async function requestJson<T = any>(url: string, options: RequestJsonOptions = {}): Promise<T> {
+async function requestJson<T = Record<string, unknown>>(
+  url: string,
+  options: RequestJsonOptions = {}
+): Promise<T> {
   const response = await fetch(url, {
     method: options.method || "GET",
     headers: {
@@ -455,7 +594,9 @@ async function requestJson<T = any>(url: string, options: RequestJsonOptions = {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status} ${response.statusText} (${url})`);
+    throw new Error(
+      `Request failed: ${response.status} ${response.statusText} (${url})`
+    );
   }
 
   return response.json();
@@ -468,7 +609,9 @@ async function loadState(): Promise<NotifierState> {
     return {
       bootstrapped: Boolean(parsed.bootstrapped),
       seen: typeof parsed.seen === "object" && parsed.seen ? parsed.seen : {},
-      telegramOffset: Number.isFinite(parsed.telegramOffset) ? parsed.telegramOffset : 0,
+      telegramOffset: Number.isFinite(parsed.telegramOffset)
+        ? parsed.telegramOffset
+        : 0,
     };
   } catch {
     return {
@@ -503,13 +646,16 @@ async function saveState() {
         telegramOffset: state.telegramOffset,
       },
       null,
-      2,
+      2
     ),
-    "utf8",
+    "utf8"
   );
 }
 
-async function appendLog(event: string, payload: Record<string, unknown> = {}): Promise<void> {
+async function appendLog(
+  event: string,
+  payload: Record<string, unknown> = {}
+): Promise<void> {
   const line = JSON.stringify({
     time: new Date().toISOString(),
     event,
@@ -657,7 +803,7 @@ async function maybeNotifyDesktop(item?: NotificationItem): Promise<void> {
 
 async function processTelegramUpdates(baseUrl: string): Promise<void> {
   const offset = state.telegramOffset > 0 ? state.telegramOffset : undefined;
-  const response = await fetchTelegramJson("getUpdates", {
+  const response = await fetchTelegramJson<TelegramUpdate[]>("getUpdates", {
     offset,
     timeout: Math.max(1, Math.floor(POLL_MS / 1000)),
     allowed_updates: ["message"],
@@ -670,7 +816,10 @@ async function processTelegramUpdates(baseUrl: string): Promise<void> {
   let changed = false;
 
   for (const update of response) {
-    state.telegramOffset = Math.max(state.telegramOffset || 0, Number(update.update_id || 0) + 1);
+    state.telegramOffset = Math.max(
+      state.telegramOffset || 0,
+      Number(update.update_id || 0) + 1
+    );
     changed = true;
     await handleTelegramMessage(baseUrl, update.message);
   }
@@ -680,7 +829,10 @@ async function processTelegramUpdates(baseUrl: string): Promise<void> {
   }
 }
 
-async function handleTelegramMessage(baseUrl: string, message?: TelegramMessage): Promise<void> {
+async function handleTelegramMessage(
+  baseUrl: string,
+  message?: TelegramMessage
+): Promise<void> {
   if (!message?.chat?.id || String(message.chat.id) !== String(CHAT_ID)) {
     return;
   }
@@ -700,7 +852,11 @@ async function handleTelegramMessage(baseUrl: string, message?: TelegramMessage)
   await handleTopicTelegramMessage(baseUrl, message, command);
 }
 
-async function handleGeneralTelegramMessage(baseUrl: string, message: TelegramMessage, command: TelegramCommand | null): Promise<void> {
+async function handleGeneralTelegramMessage(
+  baseUrl: string,
+  message: TelegramMessage,
+  command: TelegramCommand | null
+): Promise<void> {
   if (!command || !command.addressed) {
     return;
   }
@@ -724,8 +880,10 @@ async function handleGeneralTelegramMessage(baseUrl: string, message: TelegramMe
       [
         t("createdSession", { title: session.title || title }),
         t("sessionId", { value: session.id }),
-        threadId ? t("topicCreated", { name: topicMap[session.id]?.topicName || "ok" }) : t("postedToGeneral"),
-      ].join("\n"),
+        threadId
+          ? t("topicCreated", { name: topicMap[session.id]?.topicName || "ok" })
+          : t("postedToGeneral"),
+      ].join("\n")
     );
 
     if (threadId) {
@@ -741,7 +899,7 @@ async function handleGeneralTelegramMessage(baseUrl: string, message: TelegramMe
           title: session.title || title,
           directory: session.directory || "",
           text: t("sessionLinkedShort"),
-        },
+        }
       );
     }
 
@@ -791,13 +949,22 @@ async function handleGeneralTelegramMessage(baseUrl: string, message: TelegramMe
   await sendTelegram(t("unknownCommand"));
 }
 
-async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMessage, command: TelegramCommand | null): Promise<void> {
-  const mapping = findMappingByThreadIdShared(message.message_thread_id, topicMap);
+async function handleTopicTelegramMessage(
+  baseUrl: string,
+  message: TelegramMessage,
+  command: TelegramCommand | null
+): Promise<void> {
+  const mapping = findMappingByThreadIdShared(
+    message.message_thread_id,
+    topicMap
+  );
 
   if (command) {
     if (command.name === "unlink") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
@@ -807,23 +974,33 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
         sessionId: mapping.sessionId,
         threadId: message.message_thread_id,
       });
-      await sendTelegram(t("topicUnlinked"), { threadId: message.message_thread_id });
+      await sendTelegram(t("topicUnlinked"), {
+        threadId: message.message_thread_id,
+      });
       return;
     }
 
     if (command.name === "link") {
       const sessionId = command.args.trim();
       if (!sessionId) {
-        await sendTelegram(t("linkUsage"), { threadId: message.message_thread_id });
+        await sendTelegram(t("linkUsage"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      const session = await fetchJson(`${baseUrl}/session/${encodeURIComponent(sessionId)}`);
+      const session = await fetchJson<SessionRecord>(
+        `${baseUrl}/session/${encodeURIComponent(sessionId)}`
+      );
       topicMap[session.id] = {
         chatId: CHAT_ID,
         threadId: message.message_thread_id,
         title: session.title || t("untitledSession"),
-        topicName: topicNameForSessionShared(session.id, session.title, t("untitledSession")),
+        topicName: topicNameForSessionShared(
+          session.id,
+          session.title,
+          t("untitledSession")
+        ),
         createdAt: Date.now(),
       };
       await saveTopicMap();
@@ -831,58 +1008,85 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
         sessionId: session.id,
         threadId: message.message_thread_id,
       });
-      await sendTelegram(t("linkedTopicToSession", { sessionId: session.id }), { threadId: message.message_thread_id });
+      await sendTelegram(t("linkedTopicToSession", { sessionId: session.id }), {
+        threadId: message.message_thread_id,
+      });
       return;
     }
 
     if (command.name === "status") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      await sendTelegram(await formatMappedTopicStatus(baseUrl, mapping), { threadId: message.message_thread_id });
+      await sendTelegram(await formatMappedTopicStatus(baseUrl, mapping), {
+        threadId: message.message_thread_id,
+      });
       return;
     }
 
     if (command.name === "todo") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      await sendTelegram(await formatTodo(baseUrl, mapping.sessionId), { threadId: message.message_thread_id });
+      await sendTelegram(await formatTodo(baseUrl, mapping.sessionId), {
+        threadId: message.message_thread_id,
+      });
       return;
     }
 
     if (command.name === "diff") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      await sendTelegram(await formatDiff(baseUrl, mapping.sessionId), { threadId: message.message_thread_id });
+      await sendTelegram(await formatDiff(baseUrl, mapping.sessionId), {
+        threadId: message.message_thread_id,
+      });
       return;
     }
 
     if (command.name === "abort") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      await postJson(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/abort`, {});
-      await sendTelegram(t("abortRequested", { sessionId: mapping.sessionId }), { threadId: message.message_thread_id });
+      await postJson(
+        `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/abort`,
+        {}
+      );
+      await sendTelegram(
+        t("abortRequested", { sessionId: mapping.sessionId }),
+        { threadId: message.message_thread_id }
+      );
       return;
     }
 
     if (command.name === "fork") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      const forked = await postJson(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/fork`, {});
+      const forked = await postJson<SessionRecord>(
+        `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/fork`,
+        {}
+      );
       const threadId = await getThreadIdForItem({
         sessionId: forked.id,
         title: forked.title || `Fork of ${mapping.title || mapping.sessionId}`,
@@ -892,111 +1096,168 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
         [
           t("forkedSession", { title: forked.title || t("untitledSession") }),
           t("sessionId", { value: forked.id }),
-          threadId ? t("topicCreated", { name: topicMap[forked.id]?.topicName || "ok" }) : t("postedToGeneral"),
+          threadId
+            ? t("topicCreated", {
+                name: topicMap[forked.id]?.topicName || "ok",
+              })
+            : t("postedToGeneral"),
         ].join("\n"),
-        { threadId: message.message_thread_id },
+        { threadId: message.message_thread_id }
       );
       return;
     }
 
     if (command.name === "share") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      const shared = await postJson(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/share`, {});
-      await sendTelegram(shared?.share?.url ? t("shareUrl", { url: shared.share.url }) : t("sessionShared"), {
-        threadId: message.message_thread_id,
-      });
+      const shared = await postJson<SharedSessionResponse>(
+        `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/share`,
+        {}
+      );
+      await sendTelegram(
+        shared?.share?.url
+          ? t("shareUrl", { url: shared.share.url })
+          : t("sessionShared"),
+        {
+          threadId: message.message_thread_id,
+        }
+      );
       return;
     }
 
     if (command.name === "archive") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      await requestJson(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`, {
-        method: "PATCH",
-        body: {
-          time: {
-            archived: Date.now(),
+      await requestJson<boolean>(
+        `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`,
+        {
+          method: "PATCH",
+          body: {
+            time: {
+              archived: Date.now(),
+            },
           },
-        },
-      });
-      await sendTelegram(t("archivedSession", { sessionId: mapping.sessionId }), { threadId: message.message_thread_id });
+        }
+      );
+      await sendTelegram(
+        t("archivedSession", { sessionId: mapping.sessionId }),
+        { threadId: message.message_thread_id }
+      );
       return;
     }
 
     if (command.name === "rename") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
       const nextTitle = command.args.trim();
       if (!nextTitle) {
-        await sendTelegram(t("renameUsage"), { threadId: message.message_thread_id });
+        await sendTelegram(t("renameUsage"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      const updated = await requestJson<SessionRecord>(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`, {
-        method: "PATCH",
-        body: { title: nextTitle },
-      });
+      const updated = await requestJson<SessionRecord>(
+        `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`,
+        {
+          method: "PATCH",
+          body: { title: nextTitle },
+        }
+      );
 
       if (topicMap[mapping.sessionId]) {
         topicMap[mapping.sessionId].title = updated.title || nextTitle;
-        topicMap[mapping.sessionId].topicName = topicNameForSessionShared(mapping.sessionId, updated.title || nextTitle, t("untitledSession"));
+        topicMap[mapping.sessionId].topicName = topicNameForSessionShared(
+          mapping.sessionId,
+          updated.title || nextTitle,
+          t("untitledSession")
+        );
         await saveTopicMap();
       }
 
-      await sendTelegram(t("renamedSession", { title: updated.title || nextTitle }), { threadId: message.message_thread_id });
+      await sendTelegram(
+        t("renamedSession", { title: updated.title || nextTitle }),
+        { threadId: message.message_thread_id }
+      );
       return;
     }
 
     if (command.name === "children") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      const children = await fetchJson<SessionRecord[]>(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/children`);
+      const children = await fetchJson<SessionRecord[]>(
+        `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/children`
+      );
       if (!Array.isArray(children) || children.length === 0) {
-        await sendTelegram(t("noChildSessions"), { threadId: message.message_thread_id });
+        await sendTelegram(t("noChildSessions"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
       await sendTelegram(
         [
           t("childSessions", { value: children.length }),
-          ...children.slice(0, 10).map((child) => `- ${child.title || t("untitledSession")} | ${child.id}`),
+          ...children
+            .slice(0, 10)
+            .map(
+              (child) =>
+                `- ${child.title || t("untitledSession")} | ${child.id}`
+            ),
         ].join("\n"),
-        { threadId: message.message_thread_id },
+        { threadId: message.message_thread_id }
       );
       return;
     }
 
     if (command.name === "delete") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
-      await requestJson<boolean>(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`, {
-        method: "DELETE",
-      });
+      await requestJson<boolean>(
+        `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`,
+        {
+          method: "DELETE",
+        }
+      );
       delete topicMap[mapping.sessionId];
       await saveTopicMap();
-      await sendTelegram(t("deletedSession", { sessionId: mapping.sessionId }), { threadId: message.message_thread_id });
+      await sendTelegram(
+        t("deletedSession", { sessionId: mapping.sessionId }),
+        { threadId: message.message_thread_id }
+      );
       return;
     }
 
     if (command.name === "download") {
       if (!mapping) {
-        await sendTelegram(t("topicNotLinked"), { threadId: message.message_thread_id });
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
         return;
       }
 
@@ -1005,11 +1266,15 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
     }
 
     if (command.name === "help") {
-      await sendTelegram(await formatHelp(true), { threadId: message.message_thread_id });
+      await sendTelegram(await formatHelp(true), {
+        threadId: message.message_thread_id,
+      });
       return;
     }
 
-    await sendTelegram(t("unknownCommand"), { threadId: message.message_thread_id });
+    await sendTelegram(t("unknownCommand"), {
+      threadId: message.message_thread_id,
+    });
     return;
   }
 
@@ -1022,7 +1287,9 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
 
   const parts = await buildOpencodePartsFromTelegramMessage(message);
   if (parts.length === 0) {
-    await sendTelegram(t("nothingToForward"), { threadId: message.message_thread_id });
+    await sendTelegram(t("nothingToForward"), {
+      threadId: message.message_thread_id,
+    });
     return;
   }
 
@@ -1033,43 +1300,64 @@ async function handleTopicTelegramMessage(baseUrl: string, message: TelegramMess
     text: truncate(extractTelegramText(message), 160),
     partCount: parts.length,
   });
-  await sendTelegram(t("forwardedToSession", { sessionId: mapping.sessionId }), { threadId: message.message_thread_id });
+  await sendTelegram(
+    t("forwardedToSession", { sessionId: mapping.sessionId }),
+    { threadId: message.message_thread_id }
+  );
 }
 
 function extractTelegramText(message: TelegramMessage): string {
   return String(message?.text || message?.caption || "").trim();
 }
 
-async function parseTelegramCommand(text: string): Promise<TelegramCommand | null> {
+async function parseTelegramCommand(
+  text: string
+): Promise<TelegramCommand | null> {
   const bot = await getBotInfo();
   return parseTelegramCommandText(text, bot?.username);
 }
 
-async function createSession(baseUrl: string, title: string): Promise<SessionRecord> {
-  const session = await postJson(`${baseUrl}/session`, {
+async function createSession(
+  baseUrl: string,
+  title: string
+): Promise<SessionRecord> {
+  const session = await postJson<SessionRecord>(`${baseUrl}/session`, {
     title,
   });
 
   if (!session?.id) {
-    throw new Error(`Unexpected session create response: ${JSON.stringify(session)}`);
+    throw new Error(
+      `Unexpected session create response: ${JSON.stringify(session)}`
+    );
   }
 
   return session;
 }
 
-async function promptSession(baseUrl: string, sessionId: string, parts: MessagePart[]): Promise<SessionMessage> {
-  const result = await postJson(`${baseUrl}/session/${encodeURIComponent(sessionId)}/message`, {
-    parts,
-  });
+async function promptSession(
+  baseUrl: string,
+  sessionId: string,
+  parts: MessagePart[]
+): Promise<SessionMessage> {
+  const result = await postJson<SessionMessage>(
+    `${baseUrl}/session/${encodeURIComponent(sessionId)}/message`,
+    {
+      parts,
+    }
+  );
 
   if (!result?.info?.id) {
-    throw new Error(`Unexpected session prompt response: ${JSON.stringify(result)}`);
+    throw new Error(
+      `Unexpected session prompt response: ${JSON.stringify(result)}`
+    );
   }
 
   return result;
 }
 
-async function buildOpencodePartsFromTelegramMessage(message: TelegramMessage): Promise<MessagePart[]> {
+async function buildOpencodePartsFromTelegramMessage(
+  message: TelegramMessage
+): Promise<MessagePart[]> {
   const parts = [];
   const text = extractTelegramText(message);
   const header = formatTelegramAuthor(message);
@@ -1095,13 +1383,23 @@ async function buildOpencodePartsFromTelegramMessage(message: TelegramMessage): 
 }
 
 function formatTelegramAuthor(message: TelegramMessage): string {
-  const name = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(" ").trim();
+  const name = [message.from?.first_name, message.from?.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
   const username = message.from?.username ? `@${message.from.username}` : null;
-  return [`[Telegram]`, name || username || `user-${message.from?.id || "unknown"}`].filter(Boolean).join(" ");
+  return [
+    `[Telegram]`,
+    name || username || `user-${message.from?.id || "unknown"}`,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
-async function extractTelegramAttachments(message: TelegramMessage): Promise<AttachmentExtraction> {
-  const items = [];
+async function extractTelegramAttachments(
+  message: TelegramMessage
+): Promise<AttachmentExtraction> {
+  const items: AttachmentItem[] = [];
 
   if (Array.isArray(message.photo) && message.photo.length > 0) {
     const photo = message.photo[message.photo.length - 1];
@@ -1118,7 +1416,9 @@ async function extractTelegramAttachments(message: TelegramMessage): Promise<Att
       fileId: message.document.file_id,
       size: message.document.file_size,
       mime: message.document.mime_type || "application/octet-stream",
-      filename: message.document.file_name || `document-${message.document.file_unique_id || Date.now()}`,
+      filename:
+        message.document.file_name ||
+        `document-${message.document.file_unique_id || Date.now()}`,
     });
   }
 
@@ -1127,7 +1427,9 @@ async function extractTelegramAttachments(message: TelegramMessage): Promise<Att
       fileId: message.audio.file_id,
       size: message.audio.file_size,
       mime: message.audio.mime_type || "audio/mpeg",
-      filename: message.audio.file_name || `audio-${message.audio.file_unique_id || Date.now()}.mp3`,
+      filename:
+        message.audio.file_name ||
+        `audio-${message.audio.file_unique_id || Date.now()}.mp3`,
     });
   }
 
@@ -1145,7 +1447,9 @@ async function extractTelegramAttachments(message: TelegramMessage): Promise<Att
       fileId: message.video.file_id,
       size: message.video.file_size,
       mime: message.video.mime_type || "video/mp4",
-      filename: message.video.file_name || `video-${message.video.file_unique_id || Date.now()}.mp4`,
+      filename:
+        message.video.file_name ||
+        `video-${message.video.file_unique_id || Date.now()}.mp4`,
     });
   }
 
@@ -1154,7 +1458,12 @@ async function extractTelegramAttachments(message: TelegramMessage): Promise<Att
 
   for (const item of items) {
     if (Number(item.size || 0) > ATTACHMENT_SIZE_LIMIT) {
-      notes.push(t("attachmentSkipped", { limit: ATTACHMENT_SIZE_LIMIT, filename: item.filename }));
+      notes.push(
+        t("attachmentSkipped", {
+          limit: ATTACHMENT_SIZE_LIMIT,
+          filename: item.filename,
+        })
+      );
       continue;
     }
 
@@ -1176,9 +1485,13 @@ async function downloadTelegramFile(fileId: string): Promise<Buffer> {
     throw new Error(`Telegram file path missing for ${fileId}`);
   }
 
-  const response = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`);
+  const response = await fetch(
+    `https://api.telegram.org/file/bot${BOT_TOKEN}/${file.file_path}`
+  );
   if (!response.ok) {
-    throw new Error(`Telegram file download failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Telegram file download failed: ${response.status} ${response.statusText}`
+    );
   }
 
   return Buffer.from(await response.arrayBuffer());
@@ -1188,17 +1501,25 @@ function toDataUrl(mime: string, buffer: Buffer): string {
   return `data:${mime};base64,${buffer.toString("base64")}`;
 }
 
-async function fetchTelegramJson<T = any>(method: string, body: unknown): Promise<T> {
-  const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+async function fetchTelegramJson<T = Record<string, unknown>>(
+  method: string,
+  body: unknown
+): Promise<T> {
+  const response = await fetch(
+    `https://api.telegram.org/bot${BOT_TOKEN}/${method}`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(`Telegram request failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Telegram request failed: ${response.status} ${response.statusText}`
+    );
   }
 
   const data = await response.json();
@@ -1209,7 +1530,9 @@ async function fetchTelegramJson<T = any>(method: string, body: unknown): Promis
   return data.result;
 }
 
-async function getThreadIdForItem(item?: NotificationItem): Promise<number | null> {
+async function getThreadIdForItem(
+  item?: NotificationItem
+): Promise<number | null> {
   if (item?.threadId) {
     return item.threadId;
   }
@@ -1228,20 +1551,29 @@ async function getThreadIdForItem(item?: NotificationItem): Promise<number | nul
     return existing.threadId;
   }
 
-  const name = topicNameForSessionShared(item.sessionId, item.title, t("untitledSession"));
-  const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/createForumTopic`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      chat_id: CHAT_ID,
-      name,
-    }),
-  });
+  const name = topicNameForSessionShared(
+    item.sessionId,
+    item.title,
+    t("untitledSession")
+  );
+  const response = await fetch(
+    `https://api.telegram.org/bot${BOT_TOKEN}/createForumTopic`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        name,
+      }),
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(`Forum topic request failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Forum topic request failed: ${response.status} ${response.statusText}`
+    );
   }
 
   const data = await response.json();
@@ -1266,9 +1598,13 @@ async function getChatInfo(): Promise<TelegramChatInfo> {
     return chatInfo;
   }
 
-  const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${encodeURIComponent(CHAT_ID)}`);
+  const response = await fetch(
+    `https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${encodeURIComponent(CHAT_ID)}`
+  );
   if (!response.ok) {
-    throw new Error(`Chat lookup failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Chat lookup failed: ${response.status} ${response.statusText}`
+    );
   }
 
   const data = await response.json();
@@ -1297,22 +1633,37 @@ function formatTopicList(): string {
 
   return [
     t("linkedTopics", { value: entries.length }),
-    ...entries.slice(0, 20).map(([sessionId, value]) => `- ${value.topicName || value.title || sessionId} -> ${sessionId}`),
+    ...entries
+      .slice(0, 20)
+      .map(
+        ([sessionId, value]) =>
+          `- ${value.topicName || value.title || sessionId} -> ${sessionId}`
+      ),
   ].join("\n");
 }
 
 async function formatBridgeStatus(baseUrl: string): Promise<string> {
-  const statuses = await fetchJson(`${baseUrl}/session/status`).catch(() => ({}));
-  const counts = {};
+  const statuses = await fetchJson<SessionStatusMap>(
+    `${baseUrl}/session/status`
+  ).catch(() => ({}));
+  const counts: Record<string, number> = {};
 
   for (const value of Object.values(statuses || {})) {
-    const key = typeof value === "object" && value && "type" in value ? String((value as { type?: string }).type || "unknown") : "unknown";
+    const key =
+      typeof value === "object" && value && "type" in value
+        ? String((value as { type?: string }).type || "unknown")
+        : "unknown";
     counts[key] = (counts[key] || 0) + 1;
   }
 
-  const statusLine = Object.keys(counts).length === 0
-    ? t("noLiveStatus")
-    : t("openCodeSessionsSummary", { value: Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(", ") });
+  const statusLine =
+    Object.keys(counts).length === 0
+      ? t("noLiveStatus")
+      : t("openCodeSessionsSummary", {
+          value: Object.entries(counts)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(", "),
+        });
 
   return [
     t("statusTitle"),
@@ -1379,25 +1730,37 @@ async function formatHelp(inTopic = false): Promise<string> {
 
 async function formatSessions(baseUrl: string, args?: string): Promise<string> {
   const limit = clamp(Number(args || 10), 1, 20);
-  const sessions = await fetchJson(`${baseUrl}/session?limit=${limit}`);
+  const sessions = await fetchJson<SessionRecord[]>(
+    `${baseUrl}/session?limit=${limit}`
+  );
   if (!Array.isArray(sessions) || sessions.length === 0) {
     return t("noSessions");
   }
 
   return [
     t("recentSessions", { value: sessions.length }),
-    ...sessions.map((session) => `- ${truncate(session.title || t("untitledSession"), 48)} | ${session.id} | ${path.basename(session.directory || "") || t("unknownValue")}`),
+    ...sessions.map(
+      (session) =>
+        `- ${truncate(session.title || t("untitledSession"), 48)} | ${session.id} | ${path.basename(session.directory || "") || t("unknownValue")}`
+    ),
   ].join("\n");
 }
 
-async function formatSessionDetails(baseUrl: string, sessionId?: string): Promise<string> {
+async function formatSessionDetails(
+  baseUrl: string,
+  sessionId?: string
+): Promise<string> {
   const target = String(sessionId || "").trim();
   if (!target) {
     return t("sessionUsage");
   }
 
-  const session = await fetchJson(`${baseUrl}/session/${encodeURIComponent(target)}`);
-  const project = await fetchProjectById(baseUrl, session.projectID).catch(() => null);
+  const session = await fetchJson<SessionRecord>(
+    `${baseUrl}/session/${encodeURIComponent(target)}`
+  );
+  const project = await fetchProjectById(baseUrl, session.projectID).catch(
+    () => null
+  );
   return [
     t("session", { value: session.title || t("untitledSession") }),
     t("id", { value: session.id }),
@@ -1407,11 +1770,13 @@ async function formatSessionDetails(baseUrl: string, sessionId?: string): Promis
     t("created", { value: new Date(session.time.created).toISOString() }),
     t("updated", { value: new Date(session.time.updated).toISOString() }),
     session.parentID ? t("parent", { value: session.parentID }) : null,
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 async function formatProject(baseUrl: string): Promise<string> {
-  const project = await fetchJson(`${baseUrl}/project/current`);
+  const project = await fetchJson<SessionRecord>(`${baseUrl}/project/current`);
   return [
     t("project", { value: project.name || t("unknownProject") }),
     t("id", { value: project.id }),
@@ -1422,19 +1787,26 @@ async function formatProject(baseUrl: string): Promise<string> {
 
 async function formatProjects(baseUrl: string, args?: string): Promise<string> {
   const limit = clamp(Number(args || 10), 1, 20);
-  const projects = await fetchJson(`${baseUrl}/project`);
+  const projects = await fetchJson<SessionRecord[]>(`${baseUrl}/project`);
   if (!Array.isArray(projects) || projects.length === 0) {
     return t("noProjects");
   }
 
   return [
     t("projects", { value: projects.length }),
-    ...projects.slice(0, limit).map((project) => `- ${project.name || t("unknownProject")} | ${project.id} | ${project.worktree}`),
+    ...projects
+      .slice(0, limit)
+      .map(
+        (project) =>
+          `- ${project.name || t("unknownProject")} | ${project.id} | ${project.worktree}`
+      ),
   ].join("\n");
 }
 
 async function formatProviders(baseUrl: string): Promise<string> {
-  const data = await fetchJson(`${baseUrl}/config/providers`);
+  const data = await fetchJson<ProviderConfigResponse>(
+    `${baseUrl}/config/providers`
+  );
   const providers = Array.isArray(data?.providers) ? data.providers : [];
   if (providers.length === 0) {
     return t("noProviders");
@@ -1449,11 +1821,20 @@ async function formatProviders(baseUrl: string): Promise<string> {
   ].join("\n");
 }
 
-async function formatMappedTopicStatus(baseUrl: string, mapping: MappedThread): Promise<string> {
-  const statusMap = await fetchJson(`${baseUrl}/session/status`).catch(() => ({}));
+async function formatMappedTopicStatus(
+  baseUrl: string,
+  mapping: MappedThread
+): Promise<string> {
+  const statusMap = await fetchJson<SessionStatusMap>(
+    `${baseUrl}/session/status`
+  ).catch(() => ({}));
   const liveStatus = statusMap?.[mapping.sessionId]?.type || "unknown";
-  const session = await fetchJson(`${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`).catch(() => null);
-  const project = session?.projectID ? await fetchProjectById(baseUrl, session.projectID).catch(() => null) : null;
+  const session = await fetchJson<SessionRecord>(
+    `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}`
+  ).catch(() => null);
+  const project = session?.projectID
+    ? await fetchProjectById(baseUrl, session.projectID).catch(() => null)
+    : null;
   return [
     t("session", { value: mapping.title || t("untitledSession") }),
     t("sessionId", { value: mapping.sessionId }),
@@ -1461,11 +1842,15 @@ async function formatMappedTopicStatus(baseUrl: string, mapping: MappedThread): 
     project ? t("project", { value: project.name || project.worktree }) : null,
     t("threadId", { value: mapping.threadId }),
     t("openCodeStatus", { value: liveStatus }),
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 async function formatTodo(baseUrl: string, sessionId: string): Promise<string> {
-  const todos = await fetchJson(`${baseUrl}/session/${encodeURIComponent(sessionId)}/todo`).catch(() => []);
+  const todos = await fetchJson<TodoItem[]>(
+    `${baseUrl}/session/${encodeURIComponent(sessionId)}/todo`
+  ).catch(() => []);
   if (!Array.isArray(todos) || todos.length === 0) {
     return t("noTodos");
   }
@@ -1477,18 +1862,25 @@ async function formatTodo(baseUrl: string, sessionId: string): Promise<string> {
 }
 
 async function formatDiff(baseUrl: string, sessionId: string): Promise<string> {
-  const diff = await fetchJson(`${baseUrl}/session/${encodeURIComponent(sessionId)}/diff`).catch(() => []);
+  const diff = await fetchJson<DiffEntry[]>(
+    `${baseUrl}/session/${encodeURIComponent(sessionId)}/diff`
+  ).catch(() => []);
   if (!Array.isArray(diff) || diff.length === 0) {
     return t("noDiff");
   }
 
   return [
     t("diffFiles", { value: diff.length }),
-    ...diff.slice(0, 12).map((entry) => `- ${entry.path || entry.file || "unknown"}`),
+    ...diff
+      .slice(0, 12)
+      .map((entry) => `- ${entry.path || entry.file || "unknown"}`),
   ].join("\n");
 }
 
-async function notifyLifecycle(stateLabel: string, extra: Record<string, unknown> = {}): Promise<void> {
+async function notifyLifecycle(
+  stateLabel: string,
+  extra: Record<string, unknown> = {}
+): Promise<void> {
   const bits = [
     t("lifecycle", { state: stateLabel }),
     t("pid", { value: process.pid }),
@@ -1500,9 +1892,13 @@ async function notifyLifecycle(stateLabel: string, extra: Record<string, unknown
   await appendLog(`lifecycle-${stateLabel}`, extra);
 }
 
-async function sendSessionTranscript(baseUrl: string, mapping: MappedThread, threadId: number): Promise<void> {
+async function sendSessionTranscript(
+  baseUrl: string,
+  mapping: MappedThread,
+  threadId: number
+): Promise<void> {
   const messages = await fetchJson<SessionMessage[]>(
-    `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/message?limit=100`,
+    `${baseUrl}/session/${encodeURIComponent(mapping.sessionId)}/message?limit=100`
   );
 
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -1515,7 +1911,10 @@ async function sendSessionTranscript(baseUrl: string, mapping: MappedThread, thr
   await sendTelegramDocument(fileName, content, threadId);
 }
 
-function renderSessionTranscript(mapping: MappedThread, messages: SessionMessage[]): string {
+function renderSessionTranscript(
+  mapping: MappedThread,
+  messages: SessionMessage[]
+): string {
   const blocks = [
     `# ${mapping.title || mapping.sessionId}`,
     `Session ID: ${mapping.sessionId}`,
@@ -1536,19 +1935,32 @@ function renderSessionTranscript(mapping: MappedThread, messages: SessionMessage
   return blocks.join("\n");
 }
 
-async function sendTelegramDocument(fileName: string, content: string, threadId: number): Promise<void> {
+async function sendTelegramDocument(
+  fileName: string,
+  content: string,
+  threadId: number
+): Promise<void> {
   const form = new FormData();
   form.set("chat_id", CHAT_ID);
   form.set("message_thread_id", String(threadId));
-  form.set("document", new Blob([content], { type: "text/markdown" }), fileName);
+  form.set(
+    "document",
+    new Blob([content], { type: "text/markdown" }),
+    fileName
+  );
 
-  const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
-    method: "POST",
-    body: form,
-  });
+  const response = await fetch(
+    `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`,
+    {
+      method: "POST",
+      body: form,
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(`Telegram document request failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Telegram document request failed: ${response.status} ${response.statusText}`
+    );
   }
 }
 
@@ -1559,12 +1971,17 @@ function sanitizeFileName(value: string): string {
     .slice(0, 80);
 }
 
-async function fetchProjectById(baseUrl: string, projectId?: string): Promise<SessionRecord | null> {
+async function fetchProjectById(
+  baseUrl: string,
+  projectId?: string
+): Promise<SessionRecord | null> {
   if (!projectId) {
     return null;
   }
 
-  return fetchJson<SessionRecord>(`${baseUrl}/project/${encodeURIComponent(projectId)}`) as Promise<SessionRecord>;
+  return fetchJson<SessionRecord>(
+    `${baseUrl}/project/${encodeURIComponent(projectId)}`
+  ) as Promise<SessionRecord>;
 }
 
 function defaultOpencodeBin(): string {
@@ -1588,7 +2005,10 @@ function getDesktopNotifyArgs(item: NotificationItem): string[] {
   const body = truncate(item.text || "Step completed.", 220);
 
   if (process.platform === "darwin") {
-    return ["-e", `display notification ${toAppleScriptString(body)} with title ${toAppleScriptString(title)}`];
+    return [
+      "-e",
+      `display notification ${toAppleScriptString(body)} with title ${toAppleScriptString(title)}`,
+    ];
   }
 
   return [title, body];
@@ -1598,7 +2018,11 @@ function toAppleScriptString(value: unknown): string {
   return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
-function createOpencodeServer(options: { hostname: string; port: number; timeout: number }): Promise<RunningServerHandle> {
+function createOpencodeServer(options: {
+  hostname: string;
+  port: number;
+  timeout: number;
+}): Promise<RunningServerHandle> {
   return new Promise((resolve, reject) => {
     const args = [
       "serve",
@@ -1612,7 +2036,9 @@ function createOpencodeServer(options: { hostname: string; port: number; timeout
     });
 
     const timeoutId = setTimeout(() => {
-      reject(new Error(`Timeout waiting for server after ${options.timeout}ms`));
+      reject(
+        new Error(`Timeout waiting for server after ${options.timeout}ms`)
+      );
     }, options.timeout);
 
     let output = "";
@@ -1652,7 +2078,9 @@ function createOpencodeServer(options: { hostname: string; port: number; timeout
 
     proc.on("exit", (code) => {
       clearTimeout(timeoutId);
-      reject(new Error(`OpenCode server exited with code ${code}. ${output}`.trim()));
+      reject(
+        new Error(`OpenCode server exited with code ${code}. ${output}`.trim())
+      );
     });
   });
 }

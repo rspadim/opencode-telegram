@@ -1,6 +1,9 @@
 data/*
 !data/.gitkeep
 node_modules/
+.eslintcache
+coverage/
+*.tsbuildinfo
 .env
 .env.*
 config.local.json
