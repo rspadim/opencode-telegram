@@ -820,6 +820,51 @@ function formatError(error: unknown): string {
   return String(error);
 }
 
+function runOpencodeCli(
+  args: string[],
+  options?: { cwd?: string; timeout?: number }
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(OPENCODE_BIN, args, {
+      cwd: options?.cwd || PROJECT_ROOT,
+      shell: process.platform === "win32",
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    proc.stdout?.on("data", (chunk: Buffer) => {
+      stdout += chunk.toString();
+    });
+    proc.stderr?.on("data", (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
+
+    const timeoutId = setTimeout(() => {
+      proc.kill();
+      reject(new Error(`opencode CLI timed out after ${options?.timeout || 15000}ms`));
+    }, options?.timeout || 15000);
+
+    proc.on("error", (error) => {
+      clearTimeout(timeoutId);
+      reject(error);
+    });
+
+    proc.on("exit", (code) => {
+      clearTimeout(timeoutId);
+      if (code === 0) {
+        resolve(stdout.trim());
+      } else {
+        reject(
+          new Error(
+            stderr.trim() || stdout.trim() || `opencode exited with code ${code}`
+          )
+        );
+      }
+    });
+  });
+}
+
 async function maybeNotifyDesktop(item?: NotificationItem): Promise<void> {
   if (!ENABLE_DESKTOP_NOTIFY || !item) {
     return;
@@ -991,6 +1036,64 @@ async function handleGeneralTelegramMessage(
 
   if (command.name === "help") {
     await sendTelegram(await formatHelp());
+    return;
+  }
+
+  if (command.name === "stats") {
+    const statsArgs = ["stats"];
+    const days = parseInt(command.args, 10);
+    if (Number.isFinite(days) && days > 0) {
+      statsArgs.push("--days", String(days));
+    }
+    try {
+      const output = await runOpencodeCli(statsArgs);
+      await sendTelegram(output || t("cliNoOutput"));
+    } catch (error) {
+      await sendTelegram(
+        t("cliCommandFailed", { command: "stats", error: formatError(error) })
+      );
+    }
+    return;
+  }
+
+  if (command.name === "models") {
+    const modelsArgs = ["models"];
+    const provider = command.args.trim();
+    if (provider) {
+      modelsArgs.push(provider);
+    }
+    try {
+      const output = await runOpencodeCli(modelsArgs);
+      await sendTelegram(output || t("cliNoOutput"));
+    } catch (error) {
+      await sendTelegram(
+        t("cliCommandFailed", { command: "models", error: formatError(error) })
+      );
+    }
+    return;
+  }
+
+  if (command.name === "export") {
+    const sessionId = command.args.trim();
+    if (!sessionId) {
+      await sendTelegram(t("exportUsage"));
+      return;
+    }
+    try {
+      const output = await runOpencodeCli(["export", sessionId]);
+      if (output) {
+        await sendTelegramDocument(
+          `${sanitizeFileName(sessionId)}.json`,
+          output
+        );
+      } else {
+        await sendTelegram(t("cliNoOutput"));
+      }
+    } catch (error) {
+      await sendTelegram(
+        t("cliCommandFailed", { command: "export", error: formatError(error) })
+      );
+    }
     return;
   }
 
@@ -1317,6 +1420,105 @@ async function handleTopicTelegramMessage(
       await sendTelegram(await formatHelp(true), {
         threadId: message.message_thread_id,
       });
+      return;
+    }
+
+    if (command.name === "compact") {
+      if (!mapping) {
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
+        return;
+      }
+
+      await sendTelegram(t("runningCliCommand", { command: "compact" }), {
+        threadId: message.message_thread_id,
+      });
+
+      try {
+        const output = await runOpencodeCli([
+          "run",
+          "--attach", baseUrl,
+          "--session", mapping.sessionId,
+          "--command", "compact",
+        ]);
+        await sendTelegram(output || t("cliNoOutput"), {
+          threadId: message.message_thread_id,
+        });
+      } catch (error) {
+        await sendTelegram(
+          t("cliCommandFailed", { command: "compact", error: formatError(error) }),
+          { threadId: message.message_thread_id }
+        );
+      }
+      return;
+    }
+
+    if (command.name === "undo") {
+      if (!mapping) {
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
+        return;
+      }
+
+      await sendTelegram(t("runningCliCommand", { command: "undo" }), {
+        threadId: message.message_thread_id,
+      });
+
+      try {
+        const output = await runOpencodeCli([
+          "run",
+          "--attach", baseUrl,
+          "--session", mapping.sessionId,
+          "--command", "undo",
+        ]);
+        await sendTelegram(output || t("cliNoOutput"), {
+          threadId: message.message_thread_id,
+        });
+      } catch (error) {
+        await sendTelegram(
+          t("cliCommandFailed", { command: "undo", error: formatError(error) }),
+          { threadId: message.message_thread_id }
+        );
+      }
+      return;
+    }
+
+    if (command.name === "export") {
+      if (!mapping) {
+        await sendTelegram(t("topicNotLinked"), {
+          threadId: message.message_thread_id,
+        });
+        return;
+      }
+
+      await sendTelegram(t("runningCliCommand", { command: "export" }), {
+        threadId: message.message_thread_id,
+      });
+
+      try {
+        const output = await runOpencodeCli([
+          "export",
+          mapping.sessionId,
+        ]);
+        if (output) {
+          await sendTelegramDocument(
+            `${sanitizeFileName(mapping.title || mapping.sessionId)}.json`,
+            output,
+            message.message_thread_id
+          );
+        } else {
+          await sendTelegram(t("cliNoOutput"), {
+            threadId: message.message_thread_id,
+          });
+        }
+      } catch (error) {
+        await sendTelegram(
+          t("cliCommandFailed", { command: "export", error: formatError(error) }),
+          { threadId: message.message_thread_id }
+        );
+      }
       return;
     }
 
@@ -2069,11 +2271,13 @@ function renderSessionTranscript(
 async function sendTelegramDocument(
   fileName: string,
   content: string,
-  threadId: number
+  threadId?: number | null
 ): Promise<void> {
   const form = new FormData();
   form.set("chat_id", CHAT_ID);
-  form.set("message_thread_id", String(threadId));
+  if (threadId) {
+    form.set("message_thread_id", String(threadId));
+  }
   form.set(
     "document",
     new Blob([content], { type: "text/markdown" }),

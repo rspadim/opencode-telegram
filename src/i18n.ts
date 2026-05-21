@@ -132,6 +132,10 @@ const MESSAGES: LocaleMap = {
     lifecycle: "telegram-opencode {state}",
     openCodeBase: "OpenCode: {value}",
     time: "Time: {value}",
+    runningCliCommand: "Running {command}...",
+    cliNoOutput: "(no output)",
+    cliCommandFailed: "{command} failed: {error}",
+    exportUsage: "Usage: /export <session-id>",
   },
 };
 
@@ -261,6 +265,10 @@ MESSAGES["pt-BR"] = {
   lifecycle: "telegram-opencode {state}",
   openCodeBase: "OpenCode: {value}",
   time: "Hora: {value}",
+  runningCliCommand: "Executando {command}...",
+  cliNoOutput: "(sem saida)",
+  cliCommandFailed: "{command} falhou: {error}",
+  exportUsage: "Uso: /export <session-id>",
 };
 
 MESSAGES.es = {
