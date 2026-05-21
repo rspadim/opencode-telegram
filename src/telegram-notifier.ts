@@ -1320,9 +1320,32 @@ async function handleTopicTelegramMessage(
       return;
     }
 
-    await sendTelegram(t("unknownCommand"), {
+    if (!mapping) {
+      await sendTelegram(t("topicNotLinked"), {
+        threadId: message.message_thread_id,
+      });
+      return;
+    }
+
+    const parts = await buildOpencodePartsFromTelegramMessage(message);
+    if (parts.length === 0) {
+      await sendTelegram(t("nothingToForward"), {
+        threadId: message.message_thread_id,
+      });
+      return;
+    }
+
+    await promptSession(baseUrl, mapping.sessionId, parts);
+    await appendLog("telegram-forwarded", {
+      sessionId: mapping.sessionId,
       threadId: message.message_thread_id,
+      text: truncate(extractTelegramText(message), 160),
+      partCount: parts.length,
     });
+    await sendTelegram(
+      t("forwardedToSession", { sessionId: mapping.sessionId }),
+      { threadId: message.message_thread_id }
+    );
     return;
   }
 
