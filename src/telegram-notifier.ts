@@ -909,7 +909,7 @@ async function handleGeneralTelegramMessage(
     return;
   }
 
-  if (command.name === "newtopic") {
+  if (command.name === "newtopic" || command.name === "newsession" || command.name === "new") {
     const title = command.args || `New session - ${new Date().toISOString()}`;
     const session = await createSession(baseUrl, title);
     const threadId = await getThreadIdForItem({
@@ -1715,6 +1715,7 @@ async function formatBridgeStatus(baseUrl: string): Promise<string> {
 
   return [
     t("statusTitle"),
+    t("openCodeBase", { value: baseUrl }),
     t("pid", { value: process.pid }),
     t("topicMappings", { value: Object.keys(topicMap).length }),
     t("telegramOffset", { value: state.telegramOffset || 0 }),

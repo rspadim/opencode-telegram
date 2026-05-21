@@ -111,7 +111,7 @@ const MESSAGES: LocaleMap = {
     helpTopicUnlink: "/unlink - remove the current topic/session mapping",
     helpTopicHelp: "/help - show this help message",
     helpGeneralNewtopic:
-      "{mention} /newtopic <title> - create a new OpenCode session and matching Telegram topic",
+      "{mention} /newtopic (or /newsession) <title> - create a new OpenCode session and matching Telegram topic",
     helpGeneralListtopics:
       "{mention} /listtopics - show saved topic/session mappings",
     helpGeneralStatus:
@@ -241,7 +241,7 @@ MESSAGES["pt-BR"] = {
   helpTopicUnlink: "/unlink - remove o mapeamento atual topic/sessao",
   helpTopicHelp: "/help - mostra esta ajuda",
   helpGeneralNewtopic:
-    "{mention} /newtopic <titulo> - cria uma nova sessao do OpenCode e o topic correspondente no Telegram",
+    "{mention} /newtopic (ou /newsession) <titulo> - cria uma nova sessao do OpenCode e o topic correspondente no Telegram",
   helpGeneralListtopics:
     "{mention} /listtopics - mostra os mapeamentos salvos de topic/sessao",
   helpGeneralStatus:
