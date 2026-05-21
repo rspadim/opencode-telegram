@@ -879,12 +879,25 @@ async function handleTelegramMessage(
   const text = extractTelegramText(message);
   const command = text ? await parseTelegramCommand(text) : null;
 
-  if (!message.message_thread_id) {
-    await handleGeneralTelegramMessage(baseUrl, message, command);
-    return;
-  }
+  try {
+    if (!message.message_thread_id) {
+      await handleGeneralTelegramMessage(baseUrl, message, command);
+      return;
+    }
 
-  await handleTopicTelegramMessage(baseUrl, message, command);
+    await handleTopicTelegramMessage(baseUrl, message, command);
+  } catch (error) {
+    await appendLog("telegram-command-error", {
+      text: truncate(text, 200),
+      error: formatError(error),
+    });
+    await sendTelegram(
+      `Command failed: ${formatError(error)}`,
+      message.message_thread_id
+        ? { threadId: message.message_thread_id }
+        : undefined
+    );
+  }
 }
 
 async function handleGeneralTelegramMessage(
