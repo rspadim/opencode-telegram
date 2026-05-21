@@ -1,5 +1,6 @@
 export {
   findMappingByThreadId,
+  parsePaginationArgs,
   parseTelegramCommandText,
   shouldReplayMessage,
   topicNameForSession,

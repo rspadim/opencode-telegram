@@ -448,9 +448,17 @@ async function scanOnce(baseUrl: string): Promise<void> {
 
   notifications.sort((a, b) => a.completedAt - b.completedAt);
 
+  let sentCount = 0;
+
   for (const item of notifications) {
-    await sendTelegram(formatTelegramMessage(item), item);
     state.seen[item.messageId] = item.completedAt;
+    try {
+      await sendTelegram(formatTelegramMessage(item), item);
+      sentCount++;
+    } catch (error) {
+      await appendLog("send-error", { messageId: item.messageId, error: formatError(error) });
+      console.error(`Failed to send notification for ${item.messageId}: ${formatError(error)}`);
+    }
   }
 
   if (notifications.length > 0) {
@@ -458,7 +466,7 @@ async function scanOnce(baseUrl: string): Promise<void> {
     await saveState();
     await saveTopicMap();
     console.log(
-      `telegram-notifier sent ${notifications.length} notification(s)`
+      `telegram-notifier sent ${sentCount}/${notifications.length} notification(s)`
     );
   }
 }
@@ -514,33 +522,57 @@ async function sendTelegram(
     payload.message_thread_id = threadId;
   }
 
-  const response = await fetch(
-    `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(payload),
+  const maxRetries = 3;
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    if (attempt > 0) {
+      await sleep(Math.min(5000 * Math.pow(2, attempt - 1), 30000));
     }
-  );
 
-  if (!response.ok) {
-    throw new Error(
-      `Telegram request failed: ${response.status} ${response.statusText}`
+    const response = await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
     );
+
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get("retry-after") || "5", 10);
+      await appendLog("telegram-rate-limit", {
+        attempt: attempt + 1,
+        maxRetries,
+        retryAfter,
+      });
+      await sleep(retryAfter * 1000);
+      lastError = new Error(`Telegram rate limited (429)`);
+      continue;
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `Telegram request failed: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    if (!data?.ok) {
+      throw new Error(`Telegram API error: ${JSON.stringify(data)}`);
+    }
+
+    await appendLog("telegram-send", {
+      threadId: payload.message_thread_id || null,
+      text: truncate(text, 200),
+    });
+    await maybeNotifyDesktop(item);
+    return;
   }
 
-  const data = await response.json();
-  if (!data?.ok) {
-    throw new Error(`Telegram API error: ${JSON.stringify(data)}`);
-  }
-
-  await appendLog("telegram-send", {
-    threadId: payload.message_thread_id || null,
-    text: truncate(text, 200),
-  });
-  await maybeNotifyDesktop(item);
+  throw lastError || new Error("Telegram send failed after retries");
 }
 
 async function fetchJson<T = Record<string, unknown>>(
